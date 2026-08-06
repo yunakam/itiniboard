@@ -33,13 +33,13 @@ public class Activity {
     private BigDecimal activityCost;
 
     @Column(name = "activity_duration")
-    private Long activityDuration;
+    private Integer activityDuration;
 
     public Activity(
             Block block,
             String activityType,
             BigDecimal activityCost,
-            Long activityDuration
+            Integer activityDuration
     ) {
         this.block = block;
         this.activityType = activityType;

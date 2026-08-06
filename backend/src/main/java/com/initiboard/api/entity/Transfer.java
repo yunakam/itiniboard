@@ -45,7 +45,7 @@ public class Transfer {
     private BigDecimal transferCost;
 
     @Column(name = "transfer_duration")
-    private Long transferDuration;
+    private Integer transferDuration;
 
     @Column(name = "transfer_departure_time")
     private LocalTime transferDepartureTime;
@@ -59,7 +59,7 @@ public class Transfer {
             String transferArrival,
             String transferMethod,
             BigDecimal transferCost,
-            Long transferDuration,
+            Integer transferDuration,
             LocalTime transferDepartureTime,
             LocalTime transferArrivalTime
     ) {
