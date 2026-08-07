@@ -8,7 +8,8 @@ import com.initiboard.api.entity.Transfer;
 import com.initiboard.api.repository.ActivityRepository;
 import com.initiboard.api.repository.BlockRepository;
 import com.initiboard.api.repository.TransferRepository;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -62,5 +63,31 @@ public class BlockService {
         }
 
         throw new IllegalArgumentException("Invalid block type");
+    }
+
+    @Transactional(readOnly = true)
+    public BlockDetailResponse getBlock (Long blockId) {
+        Block block = blockRepository.findById(blockId)
+                .orElseThrow(() -> new EntityNotFoundException("Block not found: blockId=" + blockId));
+
+        if ("activity".equals(block.getBlockType())) {
+            Activity activity = activityRepository.findById(blockId)
+                .orElseThrow(() -> new IllegalStateException("Activity detail is missing for blockId=" + blockId));
+
+            return BlockDetailResponse.fromActivity(block, activity);
+
+        }
+
+        if ("transfer".equals(block.getBlockType())) {
+            Transfer transfer = transferRepository.findById(blockId)
+                .orElseThrow(() -> new IllegalStateException("Transfer detail is missing for blockId=" + blockId));
+
+            return BlockDetailResponse.fromTransfer(block, transfer);
+
+        }
+
+        throw new IllegalStateException(
+                "Invalid block type for blockId=" + blockId
+        );
     }
 }
