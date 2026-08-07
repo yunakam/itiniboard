@@ -2,14 +2,18 @@ package com.initiboard.api.exception;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,7 +46,7 @@ public class GlobalExceptionHandler {
     ) {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", HttpStatus.NOT_FOUND.value());
-        response.put("message", exception.getMessage());
+        response.put("message", "対象のデータが見つかりません");
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
@@ -71,6 +75,53 @@ public class GlobalExceptionHandler {
         response.put("errors", fieldErrors);
 
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingServletRequestParameterException(
+            MissingServletRequestParameterException exception
+    ) {
+        log.warn("Required request parameter is missing: {}", exception.getParameterName());
+
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        fieldErrors.put(exception.getParameterName(), "必須です");
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("message", "必須のクエリパラメータが指定されていません");
+        response.put("errors", fieldErrors);
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResourceFoundException(
+            NoResourceFoundException exception
+    ) {
+        log.warn(
+                "No endpoint found: {} {}",
+                exception.getHttpMethod(),
+                exception.getResourcePath()
+        );
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", HttpStatus.NOT_FOUND.value());
+        response.put("message", "指定されたURLは見つかりません");
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> handleHttpRequestMethodNotSupportedException(
+            HttpRequestMethodNotSupportedException exception
+    ) {
+        log.warn("HTTP method not supported: {}", exception.getMethod());
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", HttpStatus.METHOD_NOT_ALLOWED.value());
+        response.put("message", "このHTTPメソッドはサポートされていません");
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
     }
 
     @ExceptionHandler(Exception.class)
