@@ -41,7 +41,14 @@ public class BlockController {
     public ResponseEntity<List<BlockUsageResponse>> getBlockUsages(
             @PathVariable Long blockId
     ) {
-        return ResponseEntity.ok(blockService.getBlockUsage(blockId));
+        BlockUsageResult result = blockService.getBlockUsage(blockId);
+
+        return ResponseEntity.ok()
+                .header(
+                        "X-Block-Deletion-Confirmation",
+                        result.deletionConfirmationToken()
+                )
+                .body(result.usages());
     }
 
     @PostMapping("{blockId}/duplicate")

@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class BlockService {
     private final PlanRepository planRepository;
     private final BlockPositionRepository blockPositionRepository;
     private final TodoRepository todoRepository;
+    private final BlockDeletionConfirmationService blockDeletionConfirmationService;
 
     @Transactional
     public BlockDetailResponse createBlock(CreateBlockRequest request) {
@@ -324,18 +327,35 @@ public class BlockService {
     }
 
     @Transactional(readOnly = true)
-    public List<BlockUsageResponse> getBlockUsage(Long blockId) {
+    public BlockUsageResult getBlockUsage(Long blockId) {
         if (!blockRepository.existsById(blockId)) {
             throw new EntityNotFoundException(
                     "Block not found: blockId=" + blockId
             );
         }
 
-        return blockPositionRepository.findPlanUsagesByBlockId(blockId)
+        List<BlockUsageResponse> usages = blockPositionRepository
+                .findPlanUsagesByBlockId(blockId)
                 .stream()
                 .map(row -> new BlockUsageResponse(
-                    ((Number) row[0]).longValue(),
-                    (String) row[1]
-                )).toList();
+                        ((Number) row[0]).longValue(),
+                        (String) row[1]
+                ))
+                .toList();
+
+        Set<Long> usagePlanIds = usages.stream()
+                .map(BlockUsageResponse::planId)
+                .collect(Collectors.toUnmodifiableSet());
+
+        String deletionConfirmationToken = blockDeletionConfirmationService.issueToken(
+                blockId,
+                usagePlanIds
+        );
+
+        return new BlockUsageResult(
+                usages,
+                deletionConfirmationToken
+        );
     }
+
 }
