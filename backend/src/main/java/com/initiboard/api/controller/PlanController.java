@@ -1,7 +1,6 @@
 package com.initiboard.api.controller;
 
-import com.initiboard.api.dto.PlanRequest;
-import com.initiboard.api.dto.PlanResponse;
+import com.initiboard.api.dto.*;
 import com.initiboard.api.service.PlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +43,14 @@ public class PlanController {
             @Valid @RequestBody PlanRequest request
     ) {
         return ResponseEntity.ok(planService.updatePlan(planId, request));
+    }
+
+    @PutMapping("/{planId}/positions")
+    public ResponseEntity<List<PlanPositionResponse>> updatePlanPositions(
+            @PathVariable Long planId,
+            @Valid @RequestBody UpdatePlanPositionsRequest request
+        ) {
+        return ResponseEntity.ok(planService.updatePlanPositions(planId, request));
     }
 
     @DeleteMapping("/{planId}")

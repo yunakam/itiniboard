@@ -1,9 +1,6 @@
 package com.initiboard.api.service;
 
-import com.initiboard.api.dto.BlockDetailResponse;
-import com.initiboard.api.dto.CandidateBlockResponse;
-import com.initiboard.api.dto.CreateBlockRequest;
-import com.initiboard.api.dto.UpdateBlockRequest;
+import com.initiboard.api.dto.*;
 import com.initiboard.api.entity.Activity;
 import com.initiboard.api.entity.Block;
 import com.initiboard.api.entity.Transfer;
@@ -324,5 +321,21 @@ public class BlockService {
         throw new IllegalStateException(
                 "Invalid block type for blockId=" + block.getBlockId()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<BlockUsageResponse> getBlockUsage(Long blockId) {
+        if (!blockRepository.existsById(blockId)) {
+            throw new EntityNotFoundException(
+                    "Block not found: blockId=" + blockId
+            );
+        }
+
+        return blockPositionRepository.findPlanUsageByBlockId(blockId)
+                .stream()
+                .map(row -> new BlockUsageResponse(
+                    ((Number) row[0]).longValue(),
+                    (String) row[1]
+                )).toList();
     }
 }

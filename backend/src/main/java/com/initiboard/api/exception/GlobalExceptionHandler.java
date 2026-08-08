@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
         log.warn("Invalid request: {}", exception.getMessage());
 
         Map<String, String> fieldErrors = new LinkedHashMap<>();
-        fieldErrors.put("request", "ブロックタイプと入力項目が一致しません");
+        fieldErrors.put("request", "入力内容が不正です");
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", HttpStatus.BAD_REQUEST.value());

@@ -1,9 +1,6 @@
 package com.initiboard.api.controller;
 
-import com.initiboard.api.dto.BlockDetailResponse;
-import com.initiboard.api.dto.CandidateBlockResponse;
-import com.initiboard.api.dto.CreateBlockRequest;
-import com.initiboard.api.dto.UpdateBlockRequest;
+import com.initiboard.api.dto.*;
 import com.initiboard.api.service.BlockService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +37,13 @@ public class BlockController {
 
     }
 
+    @GetMapping("/{blockId}/usages")
+    public ResponseEntity<List<BlockUsageResponse>> getBlockUsages(
+            @PathVariable Long blockId
+    ) {
+        return ResponseEntity.ok(blockService.getBlockUsage(blockId));
+    }
+
     @PostMapping("{blockId}/duplicate")
     public ResponseEntity<BlockDetailResponse> duplicateBlock(
             @PathVariable Long blockId) {
@@ -65,4 +69,5 @@ public class BlockController {
         return ResponseEntity.ok(blockService.getCandidateBlocks(excludePlanId)
         );
     }
+
 }
