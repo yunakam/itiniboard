@@ -3,6 +3,7 @@ package com.initiboard.api.controller;
 import com.initiboard.api.dto.BlockDetailResponse;
 import com.initiboard.api.dto.CandidateBlockResponse;
 import com.initiboard.api.dto.CreateBlockRequest;
+import com.initiboard.api.dto.UpdateBlockRequest;
 import com.initiboard.api.service.BlockService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,14 @@ public class BlockController {
 
         return ResponseEntity.ok(blockService.getBlock(blockId));
 
+    }
+
+    @PutMapping("/{blockId}")
+    public ResponseEntity<BlockDetailResponse> updateBlock(
+            @PathVariable Long blockId,
+            @Valid @RequestBody UpdateBlockRequest request
+    ) {
+        return ResponseEntity.ok(blockService.updateBlock(blockId, request));
     }
 
     @GetMapping

@@ -2,7 +2,6 @@ package com.initiboard.api.exception;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -58,6 +57,23 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("message", "リクエスト本文の形式が不正です");
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+            IllegalArgumentException exception
+    ) {
+        log.warn("Invalid request: {}", exception.getMessage());
+
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        fieldErrors.put("request", "ブロックタイプと入力項目が一致しません");
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("message", "入力内容に誤りがあります");
+        response.put("errors", fieldErrors);
 
         return ResponseEntity.badRequest().body(response);
     }

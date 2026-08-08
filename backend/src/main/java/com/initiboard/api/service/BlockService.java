@@ -3,6 +3,7 @@ package com.initiboard.api.service;
 import com.initiboard.api.dto.BlockDetailResponse;
 import com.initiboard.api.dto.CandidateBlockResponse;
 import com.initiboard.api.dto.CreateBlockRequest;
+import com.initiboard.api.dto.UpdateBlockRequest;
 import com.initiboard.api.entity.Activity;
 import com.initiboard.api.entity.Block;
 import com.initiboard.api.entity.Transfer;
@@ -93,6 +94,108 @@ public class BlockService {
         throw new IllegalStateException(
                 "Invalid block type for blockId=" + blockId
         );
+    }
+
+    @Transactional
+    public BlockDetailResponse updateBlock(Long blockId, UpdateBlockRequest request) {
+        Block block = blockRepository.findById(blockId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Block not found: blockId=" + blockId
+        ));
+
+        updateBlockBasicFields(block, request);
+
+        if ("activity".equals(block.getBlockType())) {
+            validateActivityUpdateRequest(request);
+
+            Activity activity = activityRepository.findById(blockId)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Activity detail is missing for blockId=" + blockId
+                    ));
+
+            updateActivityFields(activity, request);
+
+            return BlockDetailResponse.fromActivity(block, activity);
+        }
+
+        if ("transfer".equals(block.getBlockType())) {
+            validateTransferUpdateRequest(request);
+
+            Transfer transfer = transferRepository.findById(blockId)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Transfer detail is missing for blockId=" + blockId
+                    ));
+
+            updateTransferFields(transfer, request);
+
+            return BlockDetailResponse.fromTransfer(block, transfer );
+        }
+
+        throw new IllegalStateException(
+                "Invalid block type for blockId=" + blockId
+        );
+    }
+
+    private void updateBlockBasicFields(Block block, UpdateBlockRequest request) {
+        block.setBlockName(request.getBlockName());
+        block.setBlockPlace(request.getBlockPlace());
+        block.setBlockDetails(request.getBlockDetails());
+    }
+
+    public void validateActivityUpdateRequest(UpdateBlockRequest request) {
+        if (request.getActivityType() == null || request.getActivityType().isBlank()) {
+            throw new IllegalArgumentException("Invalid activity type");
+        }
+
+        if (hasTransferFields(request)) {
+            throw new IllegalArgumentException("Transfer fields must NOT be set for an Activity block");
+        }
+    }
+
+    public void validateTransferUpdateRequest(UpdateBlockRequest request) {
+        if (request.getTransferDeparture() == null || request.getTransferDeparture().isBlank()) {
+            throw new IllegalArgumentException("Transfer departure is required");
+        }
+
+        if (request.getTransferArrival() == null || request.getTransferArrival().isBlank()) {
+            throw new IllegalArgumentException("Transfer arrival is required");
+        }
+
+        if (hasActivityFields(request)) {
+            throw new IllegalArgumentException("Activity fields must NOT be set for a Transfer block");
+        }
+    }
+
+    public boolean hasTransferFields(UpdateBlockRequest request) {
+        return request.getTransferDeparture() != null
+                || request.getTransferArrival() != null
+                || request.getTransferMethod() != null
+                || request.getTransferCost() != null
+                || request.getTransferDuration() != null
+                || request.getTransferDepartureTime() != null
+                || request.getTransferArrivalTime() != null;
+    }
+
+    public boolean hasActivityFields(UpdateBlockRequest request) {
+        return request.getActivityType() != null
+                || request.getActivityCost() != null
+                || request.getActivityDuration() != null;
+    }
+
+    public void updateActivityFields(Activity activity, UpdateBlockRequest request) {
+        activity.setActivityType(request.getActivityType());
+        activity.setActivityCost(request.getActivityCost());
+        activity.setActivityDuration(request.getActivityDuration());
+    }
+
+    public void updateTransferFields(Transfer transfer, UpdateBlockRequest request) {
+        transfer.setTransferDeparture(transfer.getTransferDeparture());
+        transfer.setTransferArrival(transfer.getTransferArrival());
+        transfer.setTransferMethod(transfer.getTransferMethod());
+        transfer.setTransferCost(transfer.getTransferCost());
+        transfer.setTransferDuration(transfer.getTransferDuration());
+        transfer.setTransferDepartureTime(transfer.getTransferDepartureTime());
+        transfer.setTransferArrivalTime(transfer.getTransferArrivalTime());
     }
 
     @Transactional(readOnly = true)
