@@ -5,6 +5,7 @@ import com.initiboard.api.service.BlockService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
+import org.hibernate.sql.Delete;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +50,23 @@ public class BlockController {
                         result.deletionConfirmationToken()
                 )
                 .body(result.usages());
+    }
+
+    @DeleteMapping("/{blockId}")
+    public ResponseEntity<DeleteBlockResponse> deleteBlock(
+            @PathVariable Long blockId,
+            @RequestHeader(
+                    value = "X-Block-Deletion-Confirmation",
+                    required = true
+            )
+            String deletionConfirmationToken
+    ) {
+        return ResponseEntity.ok(
+                blockService.deleteBlock(
+                        blockId,
+                        deletionConfirmationToken
+                )
+        );
     }
 
     @PostMapping("{blockId}/duplicate")

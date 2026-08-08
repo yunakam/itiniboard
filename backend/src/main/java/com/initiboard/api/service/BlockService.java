@@ -358,4 +358,36 @@ public class BlockService {
         );
     }
 
+    @Transactional
+    public DeleteBlockResponse deleteBlock(
+            Long blockId,
+            String deletionConfirmationToken) {
+
+        Block block = blockRepository.findById(blockId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Block not found: blockId=" + blockId
+                ));
+
+        Set<Long> currentUsagePlanIds = blockPositionRepository
+                .findPlanUsagesByBlockId(blockId)
+                .stream()
+                .map(row -> ((Number) row[0]).longValue())
+                .collect(Collectors.toUnmodifiableSet());
+
+        blockDeletionConfirmationService.verifyAndConsume(
+                deletionConfirmationToken,
+                blockId,
+                currentUsagePlanIds
+        );
+
+        blockRepository.deleteById(blockId);
+        blockRepository.flush();
+
+        return new  DeleteBlockResponse(
+                blockId,
+                "ブロックを削除しました"
+        );
+
+    }
+
 }

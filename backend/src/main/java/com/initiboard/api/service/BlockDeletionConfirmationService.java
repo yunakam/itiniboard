@@ -43,6 +43,14 @@ public class BlockDeletionConfirmationService {
             Set<Long> currentUsagePlanIds
     ) {
 
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Deletion confirmation token is required"
+            );
+        }
+
+        removeExpiredTokens();
+
         DeletionConfirmation confirmation = confirmations.remove(token);
 
         if (confirmation == null) {
