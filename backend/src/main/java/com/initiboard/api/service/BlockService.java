@@ -97,6 +97,68 @@ public class BlockService {
     }
 
     @Transactional
+    public BlockDetailResponse duplicateBlock (Long blockId) {
+        Block sourceBlock = blockRepository.findById(blockId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Block not found: blockId=" + blockId
+                ));
+
+        Block duplicatedBlock = new Block(
+                sourceBlock.getBlockType(),
+                sourceBlock.getBlockName(),
+                sourceBlock.getBlockPlace(),
+                sourceBlock.getBlockDetails()
+        );
+
+        Block savedBlock = blockRepository.save(duplicatedBlock);
+
+        if ("activity".equals(duplicatedBlock.getBlockType())) {
+            Activity sourceActivity = activityRepository.findById(blockId)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Activity detail is missing for blockId=" + blockId
+                    ));
+
+            Activity duplicatedActivity = new Activity(
+                    savedBlock,
+                    sourceActivity.getActivityType(),
+                    sourceActivity.getActivityCost(),
+                    sourceActivity.getActivityDuration()
+            );
+
+            Activity savedActivity = activityRepository.save(duplicatedActivity);
+
+            return BlockDetailResponse.fromActivity(savedBlock, savedActivity);
+        }
+
+        if ("transfer".equals(sourceBlock.getBlockType())) {
+            Transfer sourceTransfer = transferRepository.findById(blockId)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Transfer detail is missing for blockId=" + blockId
+                    ));
+
+            Transfer duplicatedTransfer = new Transfer(
+                    savedBlock,
+                    sourceTransfer.getTransferDeparture(),
+                    sourceTransfer.getTransferArrival(),
+                    sourceTransfer.getTransferMethod(),
+                    sourceTransfer.getTransferCost(),
+                    sourceTransfer.getTransferDuration(),
+                    sourceTransfer.getTransferDepartureTime(),
+                    sourceTransfer.getTransferArrivalTime()
+            );
+
+            Transfer savedTransfer = transferRepository.save(duplicatedTransfer);
+
+            return BlockDetailResponse.fromTransfer(savedBlock, savedTransfer);
+        }
+
+        throw new IllegalStateException(
+                "Invalid block type for blockId=" + blockId
+        );
+
+    }
+
+    @Transactional
     public BlockDetailResponse updateBlock(Long blockId, UpdateBlockRequest request) {
         Block block = blockRepository.findById(blockId)
                 .orElseThrow(() -> new EntityNotFoundException(

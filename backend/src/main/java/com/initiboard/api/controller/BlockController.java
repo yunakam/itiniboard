@@ -7,6 +7,7 @@ import com.initiboard.api.dto.UpdateBlockRequest;
 import com.initiboard.api.service.BlockService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +38,16 @@ public class BlockController {
 
         return ResponseEntity.ok(blockService.getBlock(blockId));
 
+    }
+
+    @PostMapping("{blockId}/duplicate")
+    public ResponseEntity<BlockDetailResponse> duplicateBlock(
+            @PathVariable Long blockId) {
+        BlockDetailResponse response = blockService.duplicateBlock(blockId);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @PutMapping("/{blockId}")
