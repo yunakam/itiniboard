@@ -331,7 +331,7 @@ public class BlockService {
             );
         }
 
-        return blockPositionRepository.findPlanUsageByBlockId(blockId)
+        return blockPositionRepository.findPlanUsagesByBlockId(blockId)
                 .stream()
                 .map(row -> new BlockUsageResponse(
                     ((Number) row[0]).longValue(),

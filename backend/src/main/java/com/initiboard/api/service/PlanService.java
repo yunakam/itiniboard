@@ -61,6 +61,30 @@ public class PlanService {
         planRepository.delete(plan);
     }
 
+    public RemovePlanBlockResponse removeBlockFromPlan(
+            Long planId,
+            Long blockId
+    ) {
+        findPlanOrThrow(planId);
+
+        BlockPosition blockPosition = blockPositionRepository.findByPlanIdAndBlockId(planId, blockId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Block position not found: planId=" + planId + ", blockId=" + blockId));
+
+        Integer positionDayNumber = blockPosition.getPositionDayNumber();
+
+        blockPositionRepository.delete(blockPosition);
+        blockPositionRepository.flush();
+
+        resequencePositionOrders(planId, positionDayNumber);
+
+        return new RemovePlanBlockResponse(
+                planId,
+                blockId,
+                "ブロックをプランから外しました"
+        );
+    }
+
     public List<PlanPositionResponse> updatePlanPositions(
             Long planId,
             UpdatePlanPositionsRequest request
@@ -168,9 +192,31 @@ public class PlanService {
         }
     }
 
+    private void resequencePositionOrders(
+            Long planId,
+            Integer positionDayNumber
+    ) {
+        List<BlockPosition> remainingPosition = blockPositionRepository
+                .findByPlanIdAndDayNumberOrderByPositionOrder(
+                        planId,
+                        positionDayNumber
+                );
+
+        for (int index = 0; index < remainingPosition.size(); index++) {
+            BlockPosition position = remainingPosition.get(index);
+            int expectedOrder = index + 1;
+
+            if (position.getPositionOrder() != expectedOrder) {
+                position.changePositionOrder(expectedOrder);
+                blockPositionRepository.save(position);
+            }
+        }
+    }
+
     private Plan findPlanOrThrow(Long planId) {
         return planRepository.findById(planId)
-                .orElseThrow(() -> new EntityNotFoundException("プランが見つかりません: planId=" + planId));
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Plan not found: planId=" + planId));
     }
 
     private int calculateDayCount(Plan plan) {

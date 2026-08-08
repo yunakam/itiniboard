@@ -7,37 +7,66 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface BlockPositionRepository
         extends JpaRepository<BlockPosition, Long> {
 
-    // Count the plans for which a block is used
+    // Count plans that use the specified block.
     @Query("""
             SELECT COUNT(DISTINCT bp.plan.planId)
             FROM BlockPosition bp
             WHERE bp.block.blockId = :blockId
             """)
-    long countUsedPlansByBlockId(@Param("blockId") Long blockId);
-
-    // Combine block_positions & plans and get plan_id and plan_name
-    @Query(value = """
-            SELECT DISTINCT
-                p.plan_id,
-                p.plan_name
-            FROM block_positions bp
-            INNER JOIN Plans p
-                ON p.plan_id = bp.position_plan_id
-            WHERE bp.position_block_id = :blockId
-            ORDER BY p.plan_id
-            """, nativeQuery = true)
-    List<Object[]> findPlanUsageByBlockId(
+    long countUsedPlansByBlockId(
             @Param("blockId") Long blockId
     );
 
+    // Find plan IDs and names that use the specified block.
+    @Query("""
+            SELECT DISTINCT
+                bp.plan.planId,
+                bp.plan.planName
+            FROM BlockPosition bp
+            WHERE bp.block.blockId = :blockId
+            ORDER BY bp.plan.planId
+            """)
+    List<Object[]> findPlanUsagesByBlockId(
+            @Param("blockId") Long blockId
+    );
+
+    // Delete all block positions in the specified plan.
     @Modifying
     @Query("""
-        DELETE FROM  BlockPosition bp
-        WHERE bp.plan.planId = :planId        
-        """)
-    void deleteAllByPlanId(@Param("planId") Long planId);
+            DELETE FROM BlockPosition bp
+            WHERE bp.plan.planId = :planId
+            """)
+    void deleteAllByPlanId(
+            @Param("planId") Long planId
+    );
+
+    // Find the specified block position in the specified plan.
+    @Query("""
+            SELECT bp
+            FROM BlockPosition bp
+            WHERE bp.plan.planId = :planId
+              AND bp.block.blockId = :blockId
+            """)
+    Optional<BlockPosition> findByPlanIdAndBlockId(
+            @Param("planId") Long planId,
+            @Param("blockId") Long blockId
+    );
+
+    // Find all positions on the specified day in a plan by position order.
+    @Query("""
+            SELECT bp
+            FROM BlockPosition bp
+            WHERE bp.plan.planId = :planId
+              AND bp.positionDayNumber = :dayNumber
+            ORDER BY bp.positionOrder
+            """)
+    List<BlockPosition> findByPlanIdAndDayNumberOrderByPositionOrder(
+            @Param("planId") Long planId,
+            @Param("dayNumber") Integer dayNumber
+    );
 }

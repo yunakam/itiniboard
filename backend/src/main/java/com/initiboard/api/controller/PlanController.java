@@ -53,6 +53,16 @@ public class PlanController {
         return ResponseEntity.ok(planService.updatePlanPositions(planId, request));
     }
 
+    @DeleteMapping("/{planId}/blocks/{blockId}")
+    public ResponseEntity<RemovePlanBlockResponse> removeBlockFromPlan(
+            @PathVariable Long planId,
+            @PathVariable Long blockId
+    ) {
+        return ResponseEntity.ok(
+                planService.removeBlockFromPlan(planId, blockId)
+        );
+    }
+
     @DeleteMapping("/{planId}")
     public ResponseEntity<Void> deletePlan(
             @PathVariable Long planId

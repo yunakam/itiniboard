@@ -55,4 +55,14 @@ public class BlockPosition {
         this.positionDayNumber = positionDayNumber;
         this.positionOrder = positionOrder;
     }
+
+    public void changePositionOrder(Integer positionOrder) {
+        if (positionOrder == null || positionOrder < 0) {
+            throw new IllegalArgumentException(
+                    "Position order must be at least 1"
+            );
+        }
+
+        this.positionOrder = positionOrder;
+    }
 }
