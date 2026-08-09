@@ -1,20 +1,22 @@
 package com.initiboard.api.service;
 
 import com.initiboard.api.dto.*;
-import com.initiboard.api.entity.Block;
-import com.initiboard.api.entity.BlockPosition;
-import com.initiboard.api.entity.Plan;
-import com.initiboard.api.repository.BlockPositionRepository;
-import com.initiboard.api.repository.BlockRepository;
-import com.initiboard.api.repository.PlanRepository;
+import com.initiboard.api.entity.*;
+import com.initiboard.api.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,10 @@ public class PlanService {
     private final BlockRepository blockRepository;
     private final BlockPositionRepository blockPositionRepository;
 
+    private final ActivityRepository activityRepository;
+    private final TransferRepository transferRepository;
+    private final TodoRepository todoRepository;
+
     public List<PlanResponse> getAllPlans() {
         return planRepository.findAll()
                 .stream()
@@ -32,9 +38,65 @@ public class PlanService {
                 .toList();
     }
 
-    public PlanResponse getPlanById(Long planId) {
+    @Transactional(readOnly = true)
+    public PlanDetailResponse getPlanById(Long planId) {
         Plan plan = findPlanOrThrow(planId);
-        return new PlanResponse(plan);
+
+        List<BlockPosition> positions = blockPositionRepository.findAllByPlanIdWithBlockOrderByDayAndOrder(planId);
+
+        List<Long> blockIds = positions.stream()
+                .map(position -> position.getBlock().getBlockId())
+                .distinct()
+                .toList();
+
+        Map<Long, Activity> activitiesByBlockId = activityRepository
+                .findByBlockIdIn(blockIds)
+                .stream()
+                .collect(Collectors.toMap(Activity::getBlockId, Function.identity()));
+
+        Map<Long, Transfer> transfersByBlockId = transferRepository
+                .findByBlockIdIn(blockIds)
+                .stream()
+                .collect(Collectors.toMap(Transfer::getBlockId, Function.identity()));
+
+        Map<Long, Long> incompleteTodoCounts = getIncompleteTodoCounts(blockIds);
+
+        Map<Integer, List<PlanPositionDetailResponse>> positionByDay = positions
+                .stream()
+                .collect(Collectors.groupingBy(
+                        BlockPosition::getPositionDayNumber,
+                        LinkedHashMap::new,
+                        Collectors.mapping(
+                                position -> toPlanPositionDetailResponse(
+                                        position,
+                                        activitiesByBlockId,
+                                        transfersByBlockId,
+                                        incompleteTodoCounts
+                                ),
+                                Collectors.toList()
+                        )
+                ));
+
+        int dayCount = calculateDayCount(plan);
+
+        List<PlanDayResponse> days = IntStream.rangeClosed(1, dayCount)
+                .mapToObj(dayNumber -> new PlanDayResponse(
+                        dayNumber,
+                        plan.getPlanStartDate().plusDays(dayNumber - 1L),
+                        positionByDay.getOrDefault(dayNumber, List.of())
+                ))
+                .toList();
+
+        return new PlanDetailResponse(
+                plan.getPlanId(),
+                plan.getPlanName(),
+                plan.getPlanStartDate(),
+                plan.getPlanEndDate(),
+                dayCount,
+                calculateTotalCost(positions, activitiesByBlockId, transfersByBlockId),
+                calculateTotalTransferDuration(positions, transfersByBlockId),
+                days
+        );
     }
 
     public PlanResponse createPlan(PlanRequest request) {
@@ -132,6 +194,106 @@ public class PlanService {
         }
 
         return blockPositions;
+    }
+
+    private Map<Long, Long> getIncompleteTodoCounts(List<Long> blockIds) {
+        /*  Repository の Object[] 集計結果を、blockId -> 未完TODO数 の Map に変換 */
+        if (blockIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return todoRepository.countIncompleteByBlockIds(blockIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).longValue()
+                ));
+
+    }
+
+
+    private PlanPositionDetailResponse toPlanPositionDetailResponse(
+            /* BlockPosition, Block, Activity/Transfer, TODO 集計をフロントエンド用の1配置分 DTO に変換 */
+            BlockPosition position,
+            Map<Long, Activity> activitiesByBlockId,
+            Map<Long, Transfer> transfersByBlockId,
+            Map<Long, Long> incompleteTodoCounts
+    ) {
+        Block block = position.getBlock();
+        Long blockId = block.getBlockId();
+
+        Activity activity = activitiesByBlockId.get(blockId);
+        Transfer transfer = transfersByBlockId.get(blockId);
+
+        PlanPositionBlockResponse blockResponse =
+                new PlanPositionBlockResponse(
+                        block.getBlockType(),
+                        block.getBlockName(),
+                        block.getBlockPlace(),
+                        block.getBlockDetails(),
+
+                        activity != null ? activity.getActivityType() : null,
+                        activity != null ? activity.getActivityCost() : null,
+                        activity != null ? activity.getActivityDuration() : null,
+
+                        transfer != null ? transfer.getTransferDeparture() : null,
+                        transfer != null ? transfer.getTransferArrival() : null,
+                        transfer != null ? transfer.getTransferMethod() : null,
+                        transfer != null ? transfer.getTransferCost() : null,
+                        transfer != null ? transfer.getTransferDuration() : null,
+                        transfer != null ? transfer.getTransferDepartureTime() : null,
+                        transfer != null ? transfer.getTransferArrivalTime() : null,
+
+                        incompleteTodoCounts.getOrDefault(blockId, 0L)
+                );
+
+        return new PlanPositionDetailResponse(
+                position.getPositionId(),
+                blockId,
+                position.getPositionDayNumber(),
+                position.getPositionOrder(),
+                blockResponse
+        );
+    }
+
+    private BigDecimal calculateTotalCost(
+            List<BlockPosition> positions,
+            Map<Long, Activity> activitiesByBlockId,
+            Map<Long, Transfer> transfersByBlockId
+    ) {
+        return positions.stream()
+                .map(BlockPosition::getBlock)
+                .map(Block::getBlockId)
+                .map(blockId -> {
+                    Activity activity = activitiesByBlockId.get(blockId);
+                    if (activity != null) {
+                        return activity.getActivityCost();
+                    }
+
+                    Transfer transfer = transfersByBlockId.get(blockId);
+                    if (transfer != null) {
+                        return transfer.getTransferCost();
+                    }
+
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private int calculateTotalTransferDuration(
+            List<BlockPosition> positions,
+            Map<Long, Transfer> transfersByBlockId
+    ) {
+        return positions.stream()
+                .map(BlockPosition::getBlock)
+                .map(Block::getBlockId)
+                .map(transfersByBlockId::get)
+                .filter(Objects::nonNull)
+                .map(Transfer::getTransferDuration)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
     }
 
     private void validatePlanPositions(

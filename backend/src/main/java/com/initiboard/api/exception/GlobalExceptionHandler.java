@@ -1,6 +1,7 @@
 package com.initiboard.api.exception;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -138,6 +139,23 @@ public class GlobalExceptionHandler {
         response.put("message", "このHTTPメソッドはサポートされていません");
 
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolationException(
+            ConstraintViolationException exception
+    ) {
+        log.warn("Constraint violation: {}", exception.getMessage());
+
+        Map<String, Object> fieldErrors = new LinkedHashMap<>();
+        fieldErrors.put("planId", "1以上の数値を指定してください");
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("message", "入力内容に誤りがあります");
+        response.put("errors", fieldErrors);
+
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(Exception.class)

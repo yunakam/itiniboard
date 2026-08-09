@@ -3,15 +3,18 @@ package com.initiboard.api.controller;
 import com.initiboard.api.dto.*;
 import com.initiboard.api.service.PlanService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/plans")
+@Validated
 @RequiredArgsConstructor
 public class PlanController {
 
@@ -23,9 +26,11 @@ public class PlanController {
     }
 
     @GetMapping("/{planId}")
-    public ResponseEntity<PlanResponse> getPlanById(
-            @PathVariable Long planId
+    public ResponseEntity<PlanDetailResponse> getPlanById(
+            @PathVariable @Positive(message = "プランIDは1以上で指定してください")
+            Long planId
     ) {
+        PlanDetailResponse response = planService.getPlanById(planId);
         return ResponseEntity.ok(planService.getPlanById(planId));
     }
 

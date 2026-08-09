@@ -37,7 +37,7 @@ public class Todo {
     @Column(name = "todo_deadline")
     private LocalDate todoDeadline;
 
-    @Column(name = "isCompleted", nullable = false, length = 10)
+    @Column(name = "is_completed", nullable = false, length = 10)
     private boolean isCompleted;
 
     @Column(name = "created_at", insertable = false, updatable = false)

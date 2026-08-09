@@ -57,7 +57,7 @@ public class BlockPosition {
     }
 
     public void changePositionOrder(Integer positionOrder) {
-        if (positionOrder == null || positionOrder < 0) {
+        if (positionOrder == null || positionOrder < 1) {
             throw new IllegalArgumentException(
                     "Position order must be at least 1"
             );

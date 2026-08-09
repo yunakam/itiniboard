@@ -69,4 +69,16 @@ public interface BlockPositionRepository
             @Param("planId") Long planId,
             @Param("dayNumber") Integer dayNumber
     );
+
+    // Find all plans on all days in a a plan by position order.
+    @Query("""
+            SELECT bp
+            FROM BlockPosition bp
+            JOIN FETCH bp.block
+            WHERE bp.plan.planId = :planId
+            ORDER BY bp.positionDayNumber, bp.positionOrder
+            """)
+    List<BlockPosition> findAllByPlanIdWithBlockOrderByDayAndOrder(
+            @Param("planId") Long planId
+    );
 }
