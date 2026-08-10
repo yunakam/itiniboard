@@ -3,6 +3,7 @@ package com.initiboard.api.service;
 import com.initiboard.api.dto.*;
 import com.initiboard.api.entity.*;
 import com.initiboard.api.repository.*;
+import com.initiboard.api.util.CopyNameGenerator;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -126,6 +127,40 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
 
         Plan updated = planRepository.saveAndFlush(plan);
         return new PlanResponse(updated);
+    }
+
+
+    @Transactional
+    public PlanResponse duplicatePlan (Long planId) {
+        Plan sourcePlan = findPlanOrThrow(planId);
+
+        List<BlockPosition> sourcePositions = blockPositionRepository.findAllByPlanIdWithBlockOrderByDayAndOrder(planId);
+
+        String duplicatePlanName = CopyNameGenerator.generate(
+                sourcePlan.getPlanName(),
+                planRepository::existsByPlanName
+        );
+
+        Plan duplicatedPlan = new Plan(
+                duplicatePlanName,
+                sourcePlan.getPlanStartDate(),
+                sourcePlan.getPlanEndDate()
+        );
+
+        Plan savedPlan = planRepository.save(duplicatedPlan);
+
+        List<BlockPosition> duplicatePositions = sourcePositions
+                .stream()
+                .map(sourcePosition -> new BlockPosition(
+                        savedPlan,
+                        sourcePosition.getBlock(),
+                        sourcePosition.getPositionDayNumber(),
+                        sourcePosition.getPositionOrder()
+                )).toList();
+
+        blockPositionRepository.saveAll(duplicatePositions);
+
+        return new PlanResponse(savedPlan);
     }
 
     public void deletePlan(Long planId) {

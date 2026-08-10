@@ -6,6 +6,7 @@ import com.initiboard.api.entity.Block;
 import com.initiboard.api.entity.Plan;
 import com.initiboard.api.entity.Transfer;
 import com.initiboard.api.repository.*;
+import com.initiboard.api.util.CopyNameGenerator;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -122,9 +123,14 @@ public class BlockService {
     public BlockDetailResponse duplicateBlock (Long blockId) {
         Block sourceBlock = findBlockOrThrow(blockId);
 
+        String duplicateBlockName = CopyNameGenerator.generate(
+                sourceBlock.getBlockName(),
+                blockRepository::existsByBlockName
+        );
+
         Block duplicatedBlock = new Block(
                 sourceBlock.getBlockType(),
-                sourceBlock.getBlockName(),
+                duplicateBlockName,
                 sourceBlock.getBlockPlace(),
                 sourceBlock.getBlockDetails()
         );

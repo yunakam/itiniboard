@@ -45,7 +45,8 @@ public class PlanController {
 
     @PutMapping("/{planId}")
     public ResponseEntity<PlanResponse> updatePlan(
-            @PathVariable Long planId,
+            @PathVariable @Positive(message = "プランIDは1以上で指定してください")
+            Long planId,
             @Valid @RequestBody PlanRequest request
     ) {
         return ResponseEntity.ok(planService.updatePlan(planId, request));
@@ -53,7 +54,8 @@ public class PlanController {
 
     @PutMapping("/{planId}/positions")
     public ResponseEntity<List<PlanPositionResponse>> updatePlanPositions(
-            @PathVariable Long planId,
+            @PathVariable @Positive(message = "プランIDは1以上で指定してください")
+            Long planId,
             @Valid @RequestBody UpdatePlanPositionsRequest request
         ) {
         return ResponseEntity.ok(planService.updatePlanPositions(planId, request));
@@ -61,7 +63,8 @@ public class PlanController {
 
     @DeleteMapping("/{planId}/blocks/{blockId}")
     public ResponseEntity<RemovePlanBlockResponse> removeBlockFromPlan(
-            @PathVariable Long planId,
+            @PathVariable @Positive(message = "プランIDは1以上で指定してください")
+            Long planId,
             @PathVariable Long blockId
     ) {
         return ResponseEntity.ok(
@@ -69,10 +72,23 @@ public class PlanController {
         );
     }
 
+    @PostMapping("{planId}/duplicate")
+    public ResponseEntity<PlanResponse> duplicatePlan(
+            @PathVariable @Positive(message = "プランIDは1以上で指定してください")
+            Long planId
+    ) {
+        PlanResponse response = planService.duplicatePlan(planId);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
     @DeleteMapping("/{planId}")
     public ResponseEntity<Void> deletePlan(
-            @PathVariable Long planId
-    ) {
+            @PathVariable @Positive(message = "プランIDは1以上で指定してください")
+            Long planId
+            ) {
         planService.deletePlan(planId);
         return ResponseEntity.ok().build();
     }

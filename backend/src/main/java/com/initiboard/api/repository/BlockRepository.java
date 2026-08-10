@@ -24,4 +24,7 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
     List<Block> findCandidatesByExcludedPlanId(
             @Param("planId") Long planId
     );
+
+    boolean existsByBlockName(String blockName);
+
 }
