@@ -3,6 +3,7 @@ package com.initiboard.api.controller;
 import com.initiboard.api.dto.*;
 import com.initiboard.api.service.BlockService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
 import org.hibernate.sql.Delete;
@@ -32,7 +33,7 @@ public class BlockController {
 
     @GetMapping("/{blockId}")
     public ResponseEntity<BlockDetailResponse> getBlock(
-            @PathVariable Long blockId) {
+            @PathVariable @Positive Long blockId) {
 
         return ResponseEntity.ok(blockService.getBlock(blockId));
 

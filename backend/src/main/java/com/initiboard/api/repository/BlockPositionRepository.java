@@ -70,7 +70,7 @@ public interface BlockPositionRepository
             @Param("dayNumber") Integer dayNumber
     );
 
-    // Find all plans on all days in a a plan by position order.
+    // Find all plans on all days in a plan by position order.
     @Query("""
             SELECT bp
             FROM BlockPosition bp

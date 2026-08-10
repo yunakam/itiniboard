@@ -1,5 +1,6 @@
 package com.initiboard.api.repository;
 
+import com.initiboard.api.entity.Block;
 import com.initiboard.api.entity.Todo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,7 +12,7 @@ import java.util.List;
 
 public interface TodoRepository extends JpaRepository<Todo, Long> {
 
-    // Count incomplete todos associated with a specified block
+    // Count incomplete todos associated with a block
     @Query("""
             SELECT COUNT(t)
             FROM Todo t
@@ -31,4 +32,9 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     List<Object[]> countIncompleteByBlockIds(
             @Param("blockIds") Collection<Long> blockIds
     );
+
+    // return todo list of a block
+    List<Todo> findByBlock_BlockIdOrderByTodoIdAsc(Long blockId);
+
+    Long block(Block block);
 }

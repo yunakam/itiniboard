@@ -47,7 +47,12 @@ public class BlockService {
 
             Activity savedActivity = activityRepository.save(activity);
 
-            return BlockDetailResponse.fromActivity(savedBlock, savedActivity);
+            return BlockDetailResponse.fromActivity(
+                    savedBlock,
+                    savedActivity,
+                    List.of(),
+                    List.of()
+            );
         }
 
         if ("transfer".equals(request.getBlockType())) {
@@ -64,7 +69,12 @@ public class BlockService {
 
             Transfer savedTransfer = transferRepository.save(transfer);
 
-            return BlockDetailResponse.fromTransfer(savedBlock, savedTransfer);
+            return BlockDetailResponse.fromTransfer(
+                    savedBlock,
+                    savedTransfer,
+                    List.of(),
+                    List.of()
+            );
         }
 
         throw new IllegalArgumentException("Invalid block type");
@@ -75,11 +85,19 @@ public class BlockService {
         Block block = blockRepository.findById(blockId)
                 .orElseThrow(() -> new EntityNotFoundException("Block not found: blockId=" + blockId));
 
+        List<TodoResponse> todos = getTodoResponses(blockId);
+        List<BlockUsageResponse> usages = getBlockUsageResponses(blockId);
+
         if ("activity".equals(block.getBlockType())) {
             Activity activity = activityRepository.findById(blockId)
                 .orElseThrow(() -> new IllegalStateException("Activity detail is missing for blockId=" + blockId));
 
-            return BlockDetailResponse.fromActivity(block, activity);
+            return BlockDetailResponse.fromActivity(
+                    block,
+                    activity,
+                    todos,
+                    usages
+            );
 
         }
 
@@ -87,7 +105,11 @@ public class BlockService {
             Transfer transfer = transferRepository.findById(blockId)
                 .orElseThrow(() -> new IllegalStateException("Transfer detail is missing for blockId=" + blockId));
 
-            return BlockDetailResponse.fromTransfer(block, transfer);
+            return BlockDetailResponse.fromTransfer(
+                    block,
+                    transfer,
+                    todos,
+                    usages);
 
         }
 
@@ -127,7 +149,12 @@ public class BlockService {
 
             Activity savedActivity = activityRepository.save(duplicatedActivity);
 
-            return BlockDetailResponse.fromActivity(savedBlock, savedActivity);
+            return BlockDetailResponse.fromActivity(
+                    savedBlock,
+                    savedActivity,
+                    List.of(),
+                    List.of()
+            );
         }
 
         if ("transfer".equals(sourceBlock.getBlockType())) {
@@ -149,7 +176,12 @@ public class BlockService {
 
             Transfer savedTransfer = transferRepository.save(duplicatedTransfer);
 
-            return BlockDetailResponse.fromTransfer(savedBlock, savedTransfer);
+            return BlockDetailResponse.fromTransfer(
+                    savedBlock,
+                    savedTransfer,
+                    List.of(),
+                    List.of()
+            );
         }
 
         throw new IllegalStateException(
@@ -177,7 +209,12 @@ public class BlockService {
 
             updateActivityFields(activity, request);
 
-            return BlockDetailResponse.fromActivity(block, activity);
+            return BlockDetailResponse.fromActivity(
+                    block,
+                    activity,
+                    getTodoResponses(blockId),
+                    getBlockUsageResponses(blockId)
+            );
         }
 
         if ("transfer".equals(block.getBlockType())) {
@@ -190,18 +227,17 @@ public class BlockService {
 
             updateTransferFields(transfer, request);
 
-            return BlockDetailResponse.fromTransfer(block, transfer );
+            return BlockDetailResponse.fromTransfer(
+                    block,
+                    transfer,
+                    getTodoResponses(blockId),
+                    getBlockUsageResponses(blockId)
+            );
         }
 
         throw new IllegalStateException(
                 "Invalid block type for blockId=" + blockId
         );
-    }
-
-    private void updateBlockBasicFields(Block block, UpdateBlockRequest request) {
-        block.setBlockName(request.getBlockName());
-        block.setBlockPlace(request.getBlockPlace());
-        block.setBlockDetails(request.getBlockDetails());
     }
 
     public void validateActivityUpdateRequest(UpdateBlockRequest request) {
@@ -274,6 +310,95 @@ public class BlockService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public BlockUsageResult getBlockUsage(Long blockId) {
+        if (!blockRepository.existsById(blockId)) {
+            throw new EntityNotFoundException(
+                    "Block not found: blockId=" + blockId
+            );
+        }
+
+        List<BlockUsageResponse> usages = blockPositionRepository
+                .findPlanUsagesByBlockId(blockId)
+                .stream()
+                .map(row -> new BlockUsageResponse(
+                        ((Number) row[0]).longValue(),
+                        (String) row[1]
+                ))
+                .toList();
+
+        Set<Long> usagePlanIds = usages.stream()
+                .map(BlockUsageResponse::planId)
+                .collect(Collectors.toUnmodifiableSet());
+
+        String deletionConfirmationToken = blockDeletionConfirmationService.issueToken(
+                blockId,
+                usagePlanIds
+        );
+
+        return new BlockUsageResult(
+                usages,
+                deletionConfirmationToken
+        );
+    }
+
+    @Transactional
+    public DeleteBlockResponse deleteBlock(
+            Long blockId,
+            String deletionConfirmationToken) {
+
+        Block block = blockRepository.findById(blockId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Block not found: blockId=" + blockId
+                ));
+
+        Set<Long> currentUsagePlanIds = getBlockUsageResponses(blockId)
+                .stream()
+                .map(BlockUsageResponse::planId)
+                .collect(Collectors.toUnmodifiableSet());
+
+        blockDeletionConfirmationService.verifyAndConsume(
+                deletionConfirmationToken,
+                blockId,
+                currentUsagePlanIds
+        );
+
+        blockRepository.deleteById(blockId);
+        blockRepository.flush();
+
+        return new  DeleteBlockResponse(
+                blockId,
+                "ブロックを削除しました"
+        );
+
+    }
+
+
+    private List<TodoResponse> getTodoResponses(Long blockId) {
+        return todoRepository
+                .findByBlock_BlockIdOrderByTodoIdAsc(blockId)
+                .stream()
+                .map(TodoResponse::from)
+                .toList();
+    }
+
+    private List<BlockUsageResponse> getBlockUsageResponses(Long blockId) {
+        return blockPositionRepository
+                .findPlanUsagesByBlockId(blockId)
+                .stream()
+                .map(row -> new BlockUsageResponse(
+                        ((Number) row[0]).longValue(),
+                        (String) row[1]
+                ))
+                .toList();
+    }
+
+    private void updateBlockBasicFields(Block block, UpdateBlockRequest request) {
+        block.setBlockName(request.getBlockName());
+        block.setBlockPlace(request.getBlockPlace());
+        block.setBlockDetails(request.getBlockDetails());
+    }
+
     private CandidateBlockResponse toCandidateBlockResponse(Block block) {
         long incompleteTodoCount = todoRepository.countIncompleteByBlockId(
                 block.getBlockId()
@@ -326,68 +451,5 @@ public class BlockService {
         );
     }
 
-    @Transactional(readOnly = true)
-    public BlockUsageResult getBlockUsage(Long blockId) {
-        if (!blockRepository.existsById(blockId)) {
-            throw new EntityNotFoundException(
-                    "Block not found: blockId=" + blockId
-            );
-        }
-
-        List<BlockUsageResponse> usages = blockPositionRepository
-                .findPlanUsagesByBlockId(blockId)
-                .stream()
-                .map(row -> new BlockUsageResponse(
-                        ((Number) row[0]).longValue(),
-                        (String) row[1]
-                ))
-                .toList();
-
-        Set<Long> usagePlanIds = usages.stream()
-                .map(BlockUsageResponse::planId)
-                .collect(Collectors.toUnmodifiableSet());
-
-        String deletionConfirmationToken = blockDeletionConfirmationService.issueToken(
-                blockId,
-                usagePlanIds
-        );
-
-        return new BlockUsageResult(
-                usages,
-                deletionConfirmationToken
-        );
-    }
-
-    @Transactional
-    public DeleteBlockResponse deleteBlock(
-            Long blockId,
-            String deletionConfirmationToken) {
-
-        Block block = blockRepository.findById(blockId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Block not found: blockId=" + blockId
-                ));
-
-        Set<Long> currentUsagePlanIds = blockPositionRepository
-                .findPlanUsagesByBlockId(blockId)
-                .stream()
-                .map(row -> ((Number) row[0]).longValue())
-                .collect(Collectors.toUnmodifiableSet());
-
-        blockDeletionConfirmationService.verifyAndConsume(
-                deletionConfirmationToken,
-                blockId,
-                currentUsagePlanIds
-        );
-
-        blockRepository.deleteById(blockId);
-        blockRepository.flush();
-
-        return new  DeleteBlockResponse(
-                blockId,
-                "ブロックを削除しました"
-        );
-
-    }
 
 }
