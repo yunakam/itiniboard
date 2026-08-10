@@ -56,4 +56,14 @@ public class Todo {
         this.todoDeadline = todoDeadline;
         this.isCompleted = false;
     }
+
+    public void update(
+            String todoContent,
+            LocalDate todoDeadline,
+            boolean isCompleted
+    ) {
+        this.todoContent = todoContent;
+        this.todoDeadline = todoDeadline;
+        this.isCompleted = isCompleted;
+    }
 }

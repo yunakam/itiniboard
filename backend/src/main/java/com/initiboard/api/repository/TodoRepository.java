@@ -36,5 +36,4 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     // return todo list of a block
     List<Todo> findByBlock_BlockIdOrderByTodoIdAsc(Long blockId);
 
-    Long block(Block block);
 }

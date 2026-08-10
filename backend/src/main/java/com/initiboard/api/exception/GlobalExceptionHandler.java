@@ -12,6 +12,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -153,6 +154,26 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", HttpStatus.BAD_REQUEST.value());
         response.put("message", "入力内容に誤りがあります");
+        response.put("errors", fieldErrors);
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleHandlerMethodValidationException(
+            HandlerMethodValidationException exception
+    ) {
+        log.warn(
+                "Handler method validation exception: {}",
+                exception.getMessage()
+        );
+
+        Map<String, Object> fieldErrors = new LinkedHashMap<>();
+        fieldErrors.put("request", "入力内容が不正です");
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("messagse", "入力内容に誤りがあります");
         response.put("errors", fieldErrors);
 
         return ResponseEntity.badRequest().body(response);
