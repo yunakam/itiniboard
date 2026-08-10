@@ -3,6 +3,7 @@ package com.initiboard.api.service;
 import com.initiboard.api.dto.*;
 import com.initiboard.api.entity.Activity;
 import com.initiboard.api.entity.Block;
+import com.initiboard.api.entity.Plan;
 import com.initiboard.api.entity.Transfer;
 import com.initiboard.api.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -82,8 +83,7 @@ public class BlockService {
 
     @Transactional(readOnly = true)
     public BlockDetailResponse getBlock (Long blockId) {
-        Block block = blockRepository.findById(blockId)
-                .orElseThrow(() -> new EntityNotFoundException("Block not found: blockId=" + blockId));
+        Block block = findBlockOrThrow(blockId);
 
         List<TodoResponse> todos = getTodoResponses(blockId);
         List<BlockUsageResponse> usages = getBlockUsageResponses(blockId);
@@ -120,10 +120,7 @@ public class BlockService {
 
     @Transactional
     public BlockDetailResponse duplicateBlock (Long blockId) {
-        Block sourceBlock = blockRepository.findById(blockId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Block not found: blockId=" + blockId
-                ));
+        Block sourceBlock = findBlockOrThrow(blockId);
 
         Block duplicatedBlock = new Block(
                 sourceBlock.getBlockType(),
@@ -192,10 +189,7 @@ public class BlockService {
 
     @Transactional
     public BlockDetailResponse updateBlock(Long blockId, UpdateBlockRequest request) {
-        Block block = blockRepository.findById(blockId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Block not found: blockId=" + blockId
-        ));
+        Block block = findBlockOrThrow(blockId);
 
         updateBlockBasicFields(block, request);
 
@@ -347,10 +341,7 @@ public class BlockService {
             Long blockId,
             String deletionConfirmationToken) {
 
-        Block block = blockRepository.findById(blockId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Block not found: blockId=" + blockId
-                ));
+        Block block = findBlockOrThrow(blockId);
 
         Set<Long> currentUsagePlanIds = getBlockUsageResponses(blockId)
                 .stream()
@@ -451,5 +442,10 @@ public class BlockService {
         );
     }
 
+    private Block findBlockOrThrow(Long blockId) {
+        return blockRepository.findById(blockId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Block not found: blockId=" + blockId));
+    }
 
 }
