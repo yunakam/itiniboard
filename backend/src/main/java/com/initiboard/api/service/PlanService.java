@@ -99,6 +99,16 @@ public class PlanService {
         );
     }
 
+    @Transactional(readOnly = true)
+public List<PlanTodoResponse> getPlanTodos(Long planId) {
+        findPlanOrThrow(planId);
+
+        return todoRepository.findByPlanId(planId)
+                .stream()
+                .map(this::toPlanTodoResponse)
+                .toList();
+    }
+
     public PlanResponse createPlan(PlanRequest request) {
         LocalDate endDate = calculateEndDate(request.getPlanStartDate(), request.getDayCount());
         Plan plan = new Plan(request.getPlanName(), request.getPlanStartDate(), endDate);
@@ -211,7 +221,6 @@ public class PlanService {
 
     }
 
-
     private PlanPositionDetailResponse toPlanPositionDetailResponse(
             /* BlockPosition, Block, Activity/Transfer, TODO 集計をフロントエンド用の1配置分 DTO に変換 */
             BlockPosition position,
@@ -294,6 +303,19 @@ public class PlanService {
                 .filter(Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .sum();
+    }
+
+    private PlanTodoResponse toPlanTodoResponse(Todo todo) {
+        Block block = todo.getBlock();
+
+        return new PlanTodoResponse(
+                todo.getTodoId(),
+                block.getBlockId(),
+                block.getBlockName(),
+                todo.getTodoContent(),
+                todo.getTodoDeadline(),
+                todo.isCompleted()
+        );
     }
 
     private void validatePlanPositions(

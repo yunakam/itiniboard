@@ -5,6 +5,7 @@ import com.initiboard.api.service.PlanService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -74,5 +75,13 @@ public class PlanController {
     ) {
         planService.deletePlan(planId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{planId}/todos")
+    public ResponseEntity<List<PlanTodoResponse>> getPlanTodos(
+            @PathVariable @Positive(message = "プランIDは1以上で指定してください")
+            Long planId
+    ) {
+        return ResponseEntity.ok(planService.getPlanTodos(planId));
     }
 }

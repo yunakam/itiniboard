@@ -36,4 +36,17 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     // return todo list of a block
     List<Todo> findByBlock_BlockIdOrderByTodoIdAsc(Long blockId);
 
+    @Query("""
+            select todo
+            from Todo todo
+            join todo.block block
+            join BlockPosition blockPosition on blockPosition.block = block
+            where blockPosition.plan.planId = :planId
+            order by
+                blockPosition.positionDayNumber asc,
+                blockPosition.positionOrder asc,
+                todo.todoDeadline asc,
+                todo.todoId asc
+            """)
+    List<Todo> findByPlanId(@Param("planId") Long planId);
 }
