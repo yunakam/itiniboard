@@ -1,4 +1,4 @@
-improt { request } from './client'
+import { request } from './client'
 
 export function getPlans() {
     return request('/plans')
