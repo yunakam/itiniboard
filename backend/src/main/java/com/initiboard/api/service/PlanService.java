@@ -35,7 +35,7 @@ public class PlanService {
     public List<PlanResponse> getAllPlans() {
         return planRepository.findAll()
                 .stream()
-                .map(PlanResponse::new)
+                .map(this::toPlanResponse)
                 .toList();
     }
 
@@ -111,22 +111,37 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
     }
 
     public PlanResponse createPlan(PlanRequest request) {
-        LocalDate endDate = calculateEndDate(request.getPlanStartDate(), request.getDayCount());
-        Plan plan = new Plan(request.getPlanName(), request.getPlanStartDate(), endDate);
+        LocalDate endDate = calculateEndDate(
+                request.getPlanStartDate(),
+                request.getDayCount()
+        );
+
+        Plan plan = new Plan(
+                request.getPlanName(),
+                request.getPlanStartDate(),
+                endDate
+        );
+
         Plan saved = planRepository.save(plan);
-        return new PlanResponse(saved);
+
+        return toPlanResponse(saved);
     }
 
     public PlanResponse updatePlan(Long planId, PlanRequest request) {
         Plan plan = findPlanOrThrow(planId);
-        LocalDate endDate = calculateEndDate(request.getPlanStartDate(), request.getDayCount());
+
+        LocalDate endDate = calculateEndDate(
+                request.getPlanStartDate(),
+                request.getDayCount()
+        );
 
         plan.setPlanName(request.getPlanName());
         plan.setPlanStartDate(request.getPlanStartDate());
         plan.setPlanEndDate(endDate);
 
         Plan updated = planRepository.saveAndFlush(plan);
-        return new PlanResponse(updated);
+
+        return toPlanResponse(updated);
     }
 
 
@@ -134,7 +149,8 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
     public PlanResponse duplicatePlan (Long planId) {
         Plan sourcePlan = findPlanOrThrow(planId);
 
-        List<BlockPosition> sourcePositions = blockPositionRepository.findAllByPlanIdWithBlockOrderByDayAndOrder(planId);
+        List<BlockPosition> sourcePositions = blockPositionRepository
+                .findAllByPlanIdWithBlockOrderByDayAndOrder(planId);
 
         String duplicatePlanName = CopyNameGenerator.generate(
                 sourcePlan.getPlanName(),
@@ -160,7 +176,7 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
 
         blockPositionRepository.saveAll(duplicatePositions);
 
-        return new PlanResponse(savedPlan);
+        return toPlanResponse(savedPlan);
     }
 
     public void deletePlan(Long planId) {
@@ -239,6 +255,56 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
         }
 
         return blockPositions;
+    }
+
+    private PlanResponse toPlanResponse(Plan plan) {
+        List<BlockPosition> positions =
+                blockPositionRepository.findAllByPlanIdWithBlockOrderByDayAndOrder(
+                        plan.getPlanId()
+                );
+
+        if (positions.isEmpty()) {
+            return new PlanResponse(
+                    plan,
+                    BigDecimal.ZERO,
+                    calculateDayCount(plan)
+            );
+        }
+
+        // Collect the list of blocks (IDs) allocated to the plan
+        List<Long> blockIds = positions.stream()
+                .map(position -> position.getBlock().getBlockId())
+                .distinct()
+                .toList();
+
+        // Get details of activity blocks
+        Map<Long, Activity> activitiesByBlockId = activityRepository
+                .findByBlockIdIn(blockIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        Activity::getBlockId,
+                        Function.identity()
+                ));
+
+        // Get details of transfer blocks
+        Map<Long, Transfer> transfersByBlockId = transferRepository
+                .findByBlockIdIn(blockIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        Transfer::getBlockId,
+                        Function.identity()
+                ));
+
+        return new PlanResponse(
+                plan,
+                calculateTotalCost(
+                        positions,
+                        activitiesByBlockId,
+                        transfersByBlockId
+                ),
+                calculateDayCount(plan)
+        );
+
     }
 
     private Map<Long, Long> getIncompleteTodoCounts(List<Long> blockIds) {
