@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate }  from "react-router-dom";
 import {
     DEFAULT_DISPLAY_OPTIONS,
     formatCurrency,
@@ -6,14 +7,21 @@ import {
     formatWeekday,
 } from '../utils/formatters'
 
-const DEFAULT_TABLE_HEIGHT = 480
+// Dynamic height according to window height
 const MIN_TABLE_HEIGHT = 320
 const MAX_TABLE_HEIGHT = 1200
+const TABLE_VERTICAL_OFFSET = 180
 
 function clampTableHeight(height) {
     return Math.min(
         MAX_TABLE_HEIGHT,
         Math.max(MIN_TABLE_HEIGHT, height),
+    )
+}
+
+function getInitialTableHeight() {
+    return clampTableHeight(
+        window.innerHeight - TABLE_VERTICAL_OFFSET,
     )
 }
 
@@ -91,7 +99,9 @@ export default function PlanComparisonTable({
     displayOptions = DEFAULT_DISPLAY_OPTIONS,
     isTodoDrawerOpen = false,
 }) {
-    const [tableHeight, setTableHeight] = useState(DEFAULT_TABLE_HEIGHT)
+    const navigate = useNavigate()
+
+    const [tableHeight, setTableHeight] = useState(getInitialTableHeight)
     const [resizeStart, setResizeStart] = useState(null)
 
     const dates = getAllDates(planDetails)
@@ -166,26 +176,40 @@ export default function PlanComparisonTable({
                     <div className="comparison-corner" />
 
                     {plans.map((plan) => (
-                        <button
-                            key={plan.planId}
-                            className={`comparison-plan-header ${
-                                selectedPlanId === plan.planId
-                                    ? 'comparison-plan-header-selected'
-                                    : ''
-                            }`}
-                            type="button"
-                            title={plan.planName}
-                            aria-pressed={selectedPlanId === plan.planId}
-                            onClick={() => onSelectPlan(plan.planId)}
-                        >
-                            <strong>{plan.planName}</strong>
-                            <span>
-                            費用：
-                                {formatCurrency(plan.totalCost, displayOptions)}
-                                {' ｜ '}
-                                {plan.dayCount}日間
-                        </span>
-                        </button>
+                        <div key={plan.planId} className="comparison-plan-header-wrapper">
+                            <button
+                                className={`comparison-plan-header ${
+                                    selectedPlanId === plan.planId
+                                        ? 'comparison-plan-header-selected'
+                                        : ''
+                                }`}
+                                type="button"
+                                title={plan.planName}
+                                aria-pressed={selectedPlanId === plan.planId}
+                                onClick={() => onSelectPlan(plan.planId)}
+                            >
+                                <strong>{plan.planName}</strong>
+                                <span>
+                費用：
+                                    {formatCurrency(plan.totalCost, displayOptions)}
+                                    {' ｜ '}
+                                    {plan.dayCount}日間
+            </span>
+                            </button>
+
+                            <button
+                                className="comparison-plan-edit-button"
+                                type="button"
+                                aria-label={`${plan.planName}を編集`}
+                                title={`${plan.planName}を編集`}
+                                onClick={(event) => {
+                                    event.stopPropagation()
+                                    navigate(`/plans/${plan.planId}/edit`)
+                                }}
+                            >
+                                <span aria-hidden="true">✎</span>
+                            </button>
+                        </div>
                     ))}
 
                     {dates.map((date) => (

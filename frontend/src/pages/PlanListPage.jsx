@@ -2,15 +2,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { getPlan, getPlans, getPlanTodos } from '../api/plans'
 import PlanComparisonTable from '../components/PlanComparisonTable.jsx'
 import TodoDrawer from '../components/TodoDrawer'
+import {useNavigate} from "react-router-dom";
 
 export default function PlanListPage() {
+    const navigate = useNavigate();
+
     const [plans, setPlans] = useState([])
     const [planDetails, setPlanDetails] = useState({})
     const [selectedPlanId, setSelectedPlanId] = useState(null)
     const [selectedPlanTodos, setSelectedPlanTodos] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [isTodoLoading, setIsTodoLoading] = useState(false)
-    const [isTodoDrawerOpen, setIsTodoDrawerOpen] = useState(true)
+    const [isTodoDrawerOpen, setIsTodoDrawerOpen] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
     const [displayOptions, setDisplayOptions] = useState({
         locale: 'ja-JP',
@@ -120,7 +123,7 @@ export default function PlanListPage() {
                     </div>
 
                     <button
-                        className="button button-primary button-create-plan"
+                        className="button button-primary button-top-right"
                         type="button"
                         disabled
                     >
@@ -154,6 +157,7 @@ export default function PlanListPage() {
                             planDetails={planDetails}
                             selectedPlanId={selectedPlanId}
                             onSelectPlan={setSelectedPlanId}
+                            onEditPlan={planId => navigate(`/plans/${planId}/edit`)}
                             isTodoDrawerOpen={isTodoDrawerOpen}
                             displayOptions={displayOptions}
                         />

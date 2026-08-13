@@ -64,7 +64,13 @@ button {
     color: #ffffff;
 }
 
-.button-create-plan {
+.button-secondary {
+    border: 1px solid #bcc8dc;
+    background: #eef2f8;
+    color: #3f5271;
+}
+
+.button-top-right {
     padding: 8px 11px;
     font-size: 14px;
 }
@@ -88,11 +94,13 @@ button {
     background: #fff5f5;
 }
 
+.status-message h2,
 .empty-state h2 {
     margin: 0;
     font-size: 18px;
 }
 
+.status-message p,
 .empty-state p {
     margin: 8px 0 0;
     color: #6d7890;
@@ -127,31 +135,44 @@ button {
     min-width: 100%;
 }
 
-.comparison-corner,
-.comparison-plan-header {
+.comparison-corner {
     position: sticky;
     top: 0;
-    z-index: 3;
-    height: 70px;
-    min-height: 70px;
-    padding: 10px 16px;
-    border: 0;
-    border-right: 1px solid #dbe1ec;
-    border-bottom: 1px solid #dbe1ec;
-    background: #f0f3f9;
-}
-
-.comparison-corner {
     left: 0;
     z-index: 5;
     display: flex;
     align-items: center;
+    height: 70px;
+    min-height: 70px;
+    padding: 10px 16px;
+    border-right: 1px solid #dbe1ec;
+    border-bottom: 1px solid #dbe1ec;
+    background: #f0f3f9;
     color: #687388;
     font-size: 12px;
     font-weight: 700;
 }
 
+/* Planヘッダー固定と編集アイコンの重なり順は、このラッパーで管理する。 */
+.comparison-plan-header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    min-width: 240px;
+    height: 70px;
+    border-right: 1px solid #dbe1ec;
+    border-bottom: 1px solid #dbe1ec;
+    background: #f0f3f9;
+}
+
 .comparison-plan-header {
+    position: relative;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    padding: 10px 16px;
+    border: 0;
+    background: transparent;
     color: #27324a;
     text-align: left;
     cursor: pointer;
@@ -180,6 +201,48 @@ button {
     font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.comparison-plan-header-wrapper:hover .comparison-plan-header strong,
+.comparison-plan-header-wrapper:hover .comparison-plan-header span {
+    max-width: calc(100% - 50px);
+}
+
+.comparison-plan-edit-button {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    right: 10px;
+    display: none;
+    width: 30px;
+    height: 30px;
+    transform: translateY(-50%);
+    border: 1px solid #aebbd0;
+    border-radius: 6px;
+    padding: 0;
+    background: #ffffff;
+    color: #405270;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.comparison-plan-header-wrapper:hover .comparison-plan-edit-button,
+.comparison-plan-edit-button:focus-visible {
+    display: inline-grid;
+    place-items: center;
+}
+
+.comparison-plan-edit-button:hover {
+    border-color: #7e91ae;
+    background: #e8eff9;
+    color: #25355d;
+}
+
+.comparison-plan-edit-button:focus-visible {
+    outline: 3px solid rgb(87 152 211 / 40%);
+    outline-offset: 2px;
 }
 
 .comparison-date,
@@ -225,7 +288,8 @@ button {
     gap: 8px;
 }
 
-.comparison-block {
+.comparison-block,
+.itinerary-block {
     min-height: 49px;
     border-left: 5px solid;
     border-radius: 7px;
@@ -233,24 +297,28 @@ button {
     box-shadow: 0 1px 4px rgb(38 48 74 / 7%);
 }
 
-.comparison-block-activity {
+.comparison-block-activity,
+.itinerary-block-activity {
     border-color: #ea922c;
     background: #ffd69c;
     color: #754414;
 }
 
-.comparison-block-transfer {
+.comparison-block-transfer,
+.itinerary-block-transfer {
     border-color: #5798d3;
     background: #dceeff;
     color: #28577f;
 }
 
-.comparison-block-title {
+.comparison-block-title,
+.itinerary-block-title {
     display: block;
     font-size: 13px;
 }
 
-.comparison-block-meta {
+.comparison-block-meta,
+.itinerary-block-meta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -260,14 +328,16 @@ button {
     opacity: 0.86;
 }
 
-.comparison-place {
+.comparison-place,
+.itinerary-block-place {
     border-radius: 999px;
     padding: 2px 6px;
     background: rgb(255 255 255 / 58%);
     font-weight: 700;
 }
 
-.comparison-todo-count {
+.comparison-todo-count,
+.itinerary-block-todo {
     font-weight: 700;
 }
 
@@ -311,7 +381,6 @@ button {
     cursor: row-resize;
     touch-action: none;
     user-select: none;
-    cursor: row-resize;
 }
 
 .comparison-resize-handle:active {
@@ -457,4 +526,307 @@ button {
     color: #8a94a7;
     font-size: 11px;
     line-height: 1.4;
+}
+
+.plan-edit-page {
+    max-width: 1580px;
+    margin: 0 auto;
+}
+
+.plan-edit-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 20px;
+}
+
+.plan-edit-header h1 {
+    margin: 0;
+    font-size: 26px;
+}
+
+.plan-edit-eyebrow {
+    margin: 0 0 5px;
+    color: #68758c;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.plan-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 7px;
+    color: #68758c;
+    font-size: 14px;
+}
+
+.plan-summary strong {
+    font-weight: 500;
+}
+
+.plan-duration-badge {
+    border-radius: 999px;
+    padding: 3px 8px;
+    background: #e8eff9;
+    color: #40597d;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.plan-duration-badge {
+    border-radius: 999px;
+    padding: 4px 9px;
+    background: #e8eff9;
+    color: #40597d;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.itinerary-days {
+    overflow: hidden;
+    border: 1px solid #e0e6ef;
+    border-radius: 11px;
+    background: #ffffff;
+    box-shadow: 0 3px 12px rgb(38 48 74 / 4%);
+}
+
+.itinerary-day {
+    display: grid;
+    grid-template-columns: 128px minmax(0, 1fr);
+    min-height: 96px;
+    border-bottom: 1px solid #e5eaf1;
+}
+
+.itinerary-day:last-child {
+    border-bottom: 0;
+}
+
+.itinerary-day-date {
+    padding: 16px;
+    border-right: 1px solid #e5eaf1;
+    background: #fbfcff;
+}
+
+.itinerary-day-date strong {
+    display: block;
+    font-size: 17px;
+}
+
+.itinerary-day-date span {
+    color: #788399;
+    font-size: 12px;
+}
+
+.itinerary-day-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+}
+
+.plan-editor-layout {
+    display: grid;
+    gap: 20px;
+    align-items: start;
+}
+
+/*
+ * 標準PC幅:
+ * 行程エリアと右側サイドカラムの2列。
+ * 右カラム内でTODOを上、候補を下に積む。
+ */
+.plan-editor-layout-todo-open {
+    grid-template-columns: minmax(0, 1fr) 330px;
+}
+
+.plan-editor-side-column {
+    position: sticky;
+    top: 24px;
+    display: grid;
+    grid-template-rows: minmax(220px, 1fr) minmax(220px, 1fr);
+    gap: 20px;
+    max-height: calc(100vh - 48px);
+}
+
+.candidate-panel,
+.plan-todo-panel {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #e0e6ef;
+    border-radius: 11px;
+    background: #ffffff;
+    box-shadow: 0 3px 12px rgb(38 48 74 / 4%);
+}
+
+.candidate-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 220px;
+    padding: 14px;
+}
+
+.candidate-panel-header {
+    padding-bottom: 11px;
+    border-bottom: 1px solid #e6ebf2;
+}
+
+.candidate-panel-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.candidate-panel-message {
+    margin: 14px 0 0;
+    color: #728097;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.plan-todo-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 220px;
+}
+
+.plan-todo-panel-header {
+    display: flex;
+    flex: 0 0 50px;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 50px;
+    padding: 0 12px 0 14px;
+    border-bottom: 1px solid #e6ebf2;
+}
+
+.plan-todo-panel-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.plan-todo-panel-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #cbd5e4;
+    border-radius: 6px;
+    padding: 0;
+    background: #ffffff;
+    color: #405270;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.plan-todo-panel-toggle:hover {
+    border-color: #7e91ae;
+    background: #e8eff9;
+    color: #25355d;
+}
+
+.plan-todo-panel-toggle:focus-visible {
+    outline: 3px solid rgb(87 152 211 / 40%);
+    outline-offset: 2px;
+}
+
+.plan-todo-panel-content {
+    min-height: 0;
+    overflow: auto;
+    padding: 0 14px;
+}
+
+.plan-todo-panel-content .todo-list {
+    margin-top: 0;
+}
+
+.plan-todo-panel-error {
+    margin: 14px 0;
+    color: #a42b2b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/*
+ * TODO縮小時:
+ * 右端に再表示ボタンだけを残し、候補エリアと行程エリアを広く使う。
+ */
+.plan-editor-layout-todo-collapsed {
+    grid-template-columns: minmax(0, 1fr) 330px 42px;
+}
+
+.plan-editor-layout-todo-collapsed .plan-editor-side-column {
+    position: static;
+    display: contents;
+}
+
+.plan-editor-layout-todo-collapsed .candidate-panel {
+    grid-column: 2;
+}
+
+.plan-editor-layout-todo-collapsed .plan-todo-panel {
+    grid-column: 3;
+    min-width: 42px;
+    min-height: 50px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+}
+
+.plan-editor-layout-todo-collapsed .plan-todo-panel-header {
+    justify-content: center;
+    min-height: 50px;
+    padding: 0;
+    border: 1px solid #cbd5e4;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 3px 10px rgb(38 48 74 / 10%);
+}
+
+.plan-editor-layout-todo-collapsed .plan-todo-panel-toggle {
+    border: 0;
+}
+
+.plan-editor-layout-todo-collapsed .plan-todo-panel-content {
+    display: none;
+}
+
+/*
+ * 十分に広いPC幅:
+ * 行程 | 候補 | TODO をおおむね3 : 2 : 1で横並びにする。
+ */
+@media (min-width: 1500px) {
+    .plan-editor-layout-todo-open {
+        grid-template-columns:
+            minmax(650px, 3fr)
+            minmax(360px, 2fr)
+            minmax(300px, 1fr);
+    }
+
+    .plan-editor-layout-todo-open .plan-editor-side-column {
+        position: static;
+        display: contents;
+    }
+
+    .plan-editor-layout-todo-open .candidate-panel {
+        grid-column: 2;
+        min-height: 360px;
+    }
+
+    .plan-editor-layout-todo-open .plan-todo-panel {
+        grid-column: 3;
+        min-height: 360px;
+        max-height: calc(100vh - 48px);
+        position: sticky;
+        top: 24px;
+    }
+
+    .plan-editor-layout-todo-collapsed {
+        grid-template-columns:
+            minmax(650px, 3fr)
+            minmax(360px, 2fr)
+            42px;
+    }
 }
