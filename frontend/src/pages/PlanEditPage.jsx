@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
+
 import { getPlan, getPlanTodos } from '../api/plans'
 import PlanTodoPanel from "../components/PlanTodoPanel.jsx";
+import { getCandidateBlocks } from '../api/blocks'
+import CandidateBlockPanel from '../components/CandidateBlockPanel'
+
 import {
     DEFAULT_DISPLAY_OPTIONS,
     formatMonthDay,
@@ -109,6 +113,10 @@ export default function PlanEditPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [errorType, setErrorType] = useState(null)
 
+    const [candidateBlocks, setCandidateBlocks] = useState([])
+    const [isCandidateLoading, setIsCandidateLoading] = useState(false)
+    const [candidateErrorMessage, setCandidateErrorMessage] = useState('')
+
     const [todos, setTodos] = useState([])
     const [isTodoLoading, setIsTodoLoading] = useState(false)
     const [todoErrorMessage, setTodoErrorMessage] = useState('')
@@ -116,6 +124,7 @@ export default function PlanEditPage() {
 
     const numericPlanId = Number(planId)
 
+    // PlanDetails
     useEffect(() => {
         let isMounted = true
 
@@ -156,13 +165,59 @@ export default function PlanEditPage() {
             }
         }
 
-        loadPlanDetail()
+        void loadPlanDetail()
 
         return () => {
             isMounted = false
         }
     }, [planId])
 
+    // CandidateBlocks
+    useEffect(() => {
+        let isMounted = true
+
+        async function loadCandidateBlocks() {
+            if (!Number.isInteger(numericPlanId) || numericPlanId < 1) {
+                if (isMounted) {
+                    setCandidateBlocks([])
+                    setCandidateErrorMessage('')
+                }
+                return
+            }
+
+            try {
+                setIsCandidateLoading(true)
+                setCandidateErrorMessage('')
+
+                const response = await getCandidateBlocks(numericPlanId)
+
+                if (isMounted) {
+                    setCandidateBlocks(response)
+                }
+            } catch (error) {
+                console.error('Failed to load candidate blocks.', error)
+
+                if (isMounted) {
+                    setCandidateBlocks([])
+                    setCandidateErrorMessage(
+                        '候補Blockの取得に失敗しました。時間をおいて再度お試しください。',
+                    )
+                }
+            } finally {
+                if (isMounted) {
+                    setIsCandidateLoading(false)
+                }
+            }
+        }
+
+        void loadCandidateBlocks()
+
+        return () => {
+            isMounted = false
+        }
+    }, [numericPlanId])
+
+    // Todos
     useEffect(() => {
         let isMounted = true
 
@@ -200,7 +255,7 @@ export default function PlanEditPage() {
             }
         }
 
-        loadPlanTodos()
+        void loadPlanTodos()
 
         return () => {
             isMounted = false
@@ -289,18 +344,12 @@ export default function PlanEditPage() {
                         </section>
 
                         <div className="plan-editor-side-column">
-                            <aside
-                                className="candidate-panel"
-                                aria-label="候補Blockエリア"
-                            >
-                                <div className="candidate-panel-header">
-                                    <h2>候補Block</h2>
-                                </div>
 
-                                <p className="candidate-panel-message">
-                                    行程に配置されていない候補Blockを表示
-                                </p>
-                            </aside>
+                            <CandidateBlockPanel
+                                isLoading={isCandidateLoading}
+                                errorMessage={candidateErrorMessage}
+                                candidateBlocks={candidateBlocks}
+                            />
 
                             <PlanTodoPanel
                                 isOpen={isTodoPanelOpen}

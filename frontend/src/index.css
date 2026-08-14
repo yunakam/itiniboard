@@ -650,9 +650,11 @@ button {
     max-height: calc(100vh - 48px);
 }
 
-.candidate-panel,
-.plan-todo-panel {
+.candidate-panel {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
+    min-height: 220px;
     overflow: hidden;
     border: 1px solid #e0e6ef;
     border-radius: 11px;
@@ -660,15 +662,14 @@ button {
     box-shadow: 0 3px 12px rgb(38 48 74 / 4%);
 }
 
-.candidate-panel {
-    display: flex;
-    flex-direction: column;
-    min-height: 220px;
-    padding: 14px;
-}
-
 .candidate-panel-header {
-    padding-bottom: 11px;
+    display: flex;
+    flex: 0 0 50px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 50px;
+    padding: 0 14px;
     border-bottom: 1px solid #e6ebf2;
 }
 
@@ -677,11 +678,86 @@ button {
     font-size: 18px;
 }
 
+.candidate-block-count {
+    border-radius: 999px;
+    padding: 3px 8px;
+    background: #edf1f8;
+    color: #58657c;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.candidate-panel-content {
+    min-height: 0;
+    overflow: auto;
+    padding: 12px 14px;
+}
+
 .candidate-panel-message {
-    margin: 14px 0 0;
+    margin: 0;
     color: #728097;
     font-size: 12px;
     line-height: 1.6;
+}
+
+.candidate-panel-error {
+    margin: 0;
+    color: #a42b2b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.candidate-block-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.candidate-block {
+    min-height: 49px;
+    border-left: 5px solid;
+    border-radius: 7px;
+    padding: 8px 9px;
+    box-shadow: 0 1px 4px rgb(38 48 74 / 7%);
+}
+
+.candidate-block-activity {
+    border-color: #ea922c;
+    background: #ffd69c;
+    color: #754414;
+}
+
+.candidate-block-transfer {
+    border-color: #5798d3;
+    background: #dceeff;
+    color: #28577f;
+}
+
+.candidate-block-title {
+    display: block;
+    font-size: 13px;
+}
+
+.candidate-block-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-top: 4px;
+    font-size: 10px;
+    opacity: 0.86;
+}
+
+.candidate-block-summary {
+    border-radius: 999px;
+    padding: 2px 6px;
+    background: rgb(255 255 255 / 58%);
+    font-weight: 700;
+}
+
+.candidate-block-todo,
+.candidate-block-usage {
+    font-weight: 700;
 }
 
 .plan-todo-panel {
