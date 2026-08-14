@@ -906,3 +906,174 @@ button {
             42px;
     }
 }
+
+.itinerary-dnd-guide {
+    margin: 0 0 9px 4px;
+    color: #62718b;
+    font-size: 12px;
+}
+
+.position-save-message {
+    margin: 0 0 16px;
+}
+
+.itinerary-block,
+.candidate-block {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.itinerary-block:active,
+.candidate-block:active {
+    cursor: grabbing;
+}
+
+.dnd-item-dragging {
+    opacity: 0.32;
+}
+
+.dnd-item-disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+}
+
+.itinerary-day-content {
+    min-height: 96px;
+    border: 2px solid transparent;
+    transition:
+            border-color 0.15s ease,
+            background-color 0.15s ease;
+}
+
+.dnd-drop-zone-active {
+    border-color: #5798d3;
+    background: #edf7ff;
+}
+
+.dnd-drop-zone-disabled {
+    pointer-events: none;
+}
+
+.dnd-item-drop-target {
+    outline: 2px solid #5798d3;
+    outline-offset: 2px;
+}
+
+.itinerary-empty-drop-zone {
+    display: grid;
+    min-height: 64px;
+    place-items: center;
+    margin: 0;
+    border: 1.5px dashed #b9c5d7;
+    border-radius: 7px;
+    background: #f8faff;
+    color: #728097;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.candidate-return-drop-zone {
+    margin-top: 12px;
+    border: 1.5px dashed #b9c5d7;
+    border-radius: 7px;
+    padding: 10px;
+    color: #728097;
+    background: #f8faff;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    transition:
+            border-color 0.15s ease,
+            background-color 0.15s ease;
+}
+
+.candidate-return-drop-zone.dnd-drop-zone-active {
+    border-color: #5798d3;
+    background: #edf7ff;
+    color: #28577f;
+}
+
+.dnd-drag-overlay {
+    max-width: 300px;
+    overflow: hidden;
+    border: 1px solid #7e91ae;
+    border-radius: 7px;
+    padding: 9px 12px;
+    background: #ffffff;
+    color: #27324a;
+    box-shadow: 0 8px 20px rgb(38 48 74 / 22%);
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.itinerary-sortable-item {
+    position: relative;
+}
+
+.itinerary-insertion-zone {
+    position: absolute;
+    z-index: 2;
+    right: 0;
+    left: 0;
+    height: 33.333%;
+    border-radius: 7px;
+    transition:
+            background-color 0.12s ease,
+            box-shadow 0.12s ease;
+}
+
+.itinerary-insertion-zone-before {
+    top: 0;
+}
+
+.itinerary-insertion-zone-after {
+    bottom: 0;
+}
+
+.itinerary-insertion-zone-active {
+    background: transparent;
+    box-shadow: none;
+}
+
+.itinerary-insertion-zone-active::after {
+    position: absolute;
+    z-index: 3;
+    right: 8px;
+    left: 8px;
+    height: 3px;
+    border-radius: 999px;
+    background: #5798d3;
+    box-shadow: 0 0 0 3px rgb(217 239 255 / 92%);
+    content: "";
+}
+
+.itinerary-insertion-zone-before.itinerary-insertion-zone-active::after {
+    top: -5px;
+}
+
+.itinerary-insertion-zone-after.itinerary-insertion-zone-active::after {
+    bottom: -5px;
+}
+
+.candidate-panel {
+    border: 2px solid transparent;
+    transition:
+            border-color 0.15s ease,
+            background-color 0.15s ease,
+            box-shadow 0.15s ease;
+}
+
+.candidate-panel-drop-active {
+    border-color: #5798d3;
+    background: #edf7ff;
+    box-shadow: 0 0 0 3px rgb(87 152 211 / 18%);
+}
+
+.candidate-drop-message {
+    color: #28577f;
+    font-size: 11px;
+    font-weight: 700;
+}

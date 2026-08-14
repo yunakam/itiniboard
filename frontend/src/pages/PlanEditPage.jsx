@@ -1,11 +1,31 @@
-import { useEffect, useMemo, useState } from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ApiError } from '../api/client'
+import {
+    DndContext,
+    DragOverlay,
+    PointerSensor,
+    pointerWithin,
+    useDroppable,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";     // for drag & drop
+import { CSS } from '@dnd-kit/utilities'
 
-import { getPlan, getPlanTodos } from '../api/plans'
-import PlanTodoPanel from "../components/PlanTodoPanel.jsx";
-import { getCandidateBlocks } from '../api/blocks'
+import { ApiError } from '../api/client'
+import {
+    getPlan,
+    getPlanTodos,
+    updatePositions,
+} from '../api/plans'
 import CandidateBlockPanel from '../components/CandidateBlockPanel'
+import { getCandidateBlocks } from '../api/blocks'
+import PlanTodoPanel from "../components/PlanTodoPanel.jsx";
 
 import {
     DEFAULT_DISPLAY_OPTIONS,
@@ -14,6 +34,22 @@ import {
 } from '../utils/formatters'
 
 const DISPLAY_OPTIONS = DEFAULT_DISPLAY_OPTIONS
+const CANDIDATE_DROP_ID = 'candidate-drop'  //
+
+// 行程カード用のDnD ID: e.g. 'day-1'
+function getItineraryItemId(blockId) {
+    return `itinerary-${blockId}`
+}
+
+// 日付行全体のドロップ領域ID
+function getDayDropId(dayNumber) {
+    return `day-${dayNumber}`
+}
+
+// 挿入領域用ID
+function getInsertionDropId(dayNumber, blockId, placement) {
+    return `insertion-${dayNumber}-${blockId}-${placement}`
+}
 
 function formatPlanPeriod(planDetail) {
     return `${new Intl.DateTimeFormat('ja-JP', {
@@ -30,17 +66,156 @@ function formatPlanPeriod(planDetail) {
     ).format(new Date(`${planDetail.planEndDate}T00:00:00`))}`
 }
 
-function ItineraryBlockCard({ position }) {
+// 画面のdays構造 (blockId, dayNumber, positionOrder を保持) →配置一括更新APIの形式に変換
+function createPositionPayload(days) {
+    return days.flatMap((day) =>
+        day.positions.map((position, index) => ({
+            blockId: position.blockId,
+            dayNumber: day.dayNumber,
+            positionOrder: index + 1,
+        })),
+    )
+}
+
+// 日付行配列と各日付行の positions 配列を複製
+// (planDetail.daysを直接変更しないようにするため)
+function cloneDays(days) {
+    return days.map((day) => ({
+        ...day,
+        positions: [...day.positions],
+    }))
+}
+
+function getDropTarget(over) {
+    if (!over) {
+        return null
+    }
+
+    const data = over.data.current
+
+    if (data?.dropType === 'candidate') {
+        return {
+            type: 'candidate',
+        }
+    }
+
+    if (data?.dropType === 'day') {
+        return {
+            type: 'day',
+            dayNumber: data.dayNumber,
+            targetBlockId: null,
+            placement: 'end',
+        }
+    }
+
+    if (data?.dropType === 'insertion-zone') {
+        return {
+            type: 'day',
+            dayNumber: data.dayNumber,
+            targetBlockId: data.targetBlockId,
+            placement: data.placement,
+        }
+    }
+
+    return null
+}
+
+// 挿入位置計算関数
+function getInsertionIndex(targetDay, target) {
+    if (target.targetBlockId === null) {
+        return targetDay.positions.length
+    }
+
+    const targetIndex = targetDay.positions.findIndex(
+        (position) => position.blockId === target.targetBlockId,
+    )
+
+    if (targetIndex < 0) {
+        return targetDay.positions.length
+    }
+
+    return target.placement === 'after'
+        ? targetIndex + 1
+        : targetIndex
+}
+
+// ブロック挿入領域コンポーネント
+function ItineraryInsertionZone({
+    dayNumber,
+    blockId,
+    placement,
+    disabled,
+    className,  // ブロックの挿入領域コンポーネントを上下ブロックの一部まで拡張
+}) {
+    const { isOver, setNodeRef } = useDroppable({
+        id: getInsertionDropId(dayNumber, blockId, placement),
+        disabled,
+        data: {
+            dropType: 'insertion-zone',
+            dayNumber,
+            targetBlockId: blockId,
+            placement,
+        },
+    })
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={`itinerary-insertion-zone ${className} ${
+                isOver ? 'itinerary-insertion-zone-active' : ''
+            }`}
+            aria-hidden="true"
+        />
+    )
+}
+
+// 1件のBlockカードの描画＆ドラッグ・並び替え
+function ItineraryBlockCard({
+    position,
+    disabled,
+    isCandidateDragging,
+}) {
     const { block } = position
     const isTransfer = block.blockType === 'transfer'
 
+    // id を渡して、Drag & Dropに必要な変数or関数を一斉に受け取る
+    const isSortableDisabled = disabled || isCandidateDragging
+    const {
+        attributes, // マウスを使わないユーザーもD&Dできるようにする
+        listeners,  // ドラッグ開始のためのイベント
+        setNodeRef,             // D&Dする対象要素
+        transform,   // 動いた時の位置
+        transition,     // アニメーション
+        isDragging,
+    } = useSortable({
+        id: getItineraryItemId(position.blockId),
+        disabled: isSortableDisabled,
+        data: {
+            dragType: 'itinerary-item',
+            blockId: position.blockId,
+            dayNumber: position.dayNumber,
+            position,
+        }
+    })
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    }
+
     return (
         <article
+            ref={setNodeRef}
+            style={style}
             className={`itinerary-block ${
                 isTransfer
                     ? 'itinerary-block-transfer'
                     : 'itinerary-block-activity'
+            } ${isDragging ? 'dnd-item-dragging' : ''} ${
+                disabled ? 'dnd-item-disabled' : ''
             }`}
+            {...attributes}
+            {...listeners}
         >
             <strong className="itinerary-block-title">{block.blockName}</strong>
 
@@ -76,7 +251,11 @@ function ItineraryBlockCard({ position }) {
     )
 }
 
-function PlanDayRow({ day }) {
+function PlanDayRow({
+    day,
+    disabled,
+    isCandidateDragging,
+}) {
     const sortedPositions = useMemo(
         () =>
             [...day.positions].sort(
@@ -86,6 +265,15 @@ function PlanDayRow({ day }) {
         [day.positions],
     )
 
+    const { isOver, setNodeRef } = useDroppable({
+        id: getDayDropId(day.dayNumber),
+        disabled: disabled || sortedPositions.length > 0,
+        data: {
+            dropType: 'day',
+            dayNumber: day.dayNumber,
+        }
+    })
+
     return (
         <section className="itinerary-day">
             <div className="itinerary-day-date">
@@ -93,13 +281,53 @@ function PlanDayRow({ day }) {
                 <span>{formatWeekday(day.date, DISPLAY_OPTIONS)}</span>
             </div>
 
-            <div className="itinerary-day-content">
-                {sortedPositions.map((position) => (
-                    <ItineraryBlockCard
-                        key={position.positionId}
-                        position={position}
-                    />
-                ))}
+            <div
+                ref={setNodeRef}
+                className={`itinerary-day-content ${
+                isOver ? 'dnd-drop-zone-active' : ''
+                } ${disabled ? 'dnd-item-disabled' : ''}`}
+            >
+                <SortableContext
+                    items={sortedPositions.map((position) =>
+                    getItineraryItemId(position.blockId),
+                    )}
+                    strategy={verticalListSortingStrategy}
+                >
+                    {sortedPositions.map((position) => (
+                        <div
+                            className="itinerary-sortable-item"
+                            key={position.positionId}
+                        >
+                            <ItineraryBlockCard
+                                position={position}
+                                disabled={disabled}
+                                isCandidateDragging={isCandidateDragging}
+                            />
+
+                            <ItineraryInsertionZone
+                                dayNumber={day.dayNumber}
+                                blockId={position.blockId}
+                                placement="before"
+                                disabled={disabled}
+                                className={"itinerary-insertion-zone-before"}
+                            />
+
+                            <ItineraryInsertionZone
+                                dayNumber={day.dayNumber}
+                                blockId={position.blockId}
+                                placement="after"
+                                disabled={disabled}
+                                className={"itinerary-insertion-zone-after"}
+                            />
+                        </div>
+                    ))}
+                </SortableContext>
+
+                {sortedPositions.length === 0 && (
+                    <p className="itinerary-empty-drop-zone">
+                        {/*Blockをドロップできます*/}
+                    </p>
+                )}
             </div>
         </section>
     )
@@ -122,145 +350,272 @@ export default function PlanEditPage() {
     const [todoErrorMessage, setTodoErrorMessage] = useState('')
     const [isTodoPanelOpen, setIsTodoPanelOpen] = useState(true)
 
+    const [isSavingPositions, setIsSavingPositions] = useState(false)
+    const [positionErrorMessage, setPositionErrorMessage] = useState('')
+    const [activeDragData, setActiveDragData] = useState(null)
+    const [lastReturnedBlockId, setLastReturnedBlockId] = useState(null)
+
     const numericPlanId = Number(planId)
+    const isCandidateDragging = activeDragData?.dragType === 'candidate-item'
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 6,
+            },
+        }),
+    )
+
+    const loadPlanDetail = useCallback(async () => {
+        if (!Number.isInteger(numericPlanId) || numericPlanId < 1) {
+            setPlanDetail(null)
+            setErrorType('not-found')
+            setIsLoading(false)
+            return
+        }
+
+        try {
+            setIsLoading(true)
+            setErrorType(null)
+
+            const response = await getPlan(numericPlanId)
+            setPlanDetail(response)
+         } catch (error) {
+            console.error('Failed to load plan detail.', error)
+
+            setPlanDetail(null)
+            setErrorType(
+                error instanceof ApiError && error.status === 404
+                ? 'not-found'
+                : 'network',
+            )
+        } finally {
+            setIsLoading(false)
+        }
+    }, [numericPlanId])
+
+    const loadCandidateBlocks = useCallback(async () => {
+        if (!Number.isInteger(numericPlanId) || numericPlanId < 1) {
+            setCandidateBlocks([])
+            setCandidateErrorMessage('')
+            return
+        }
+
+        try {
+            setIsCandidateLoading(true)
+            setCandidateErrorMessage('')
+
+            const response = await getCandidateBlocks(numericPlanId)
+            setCandidateBlocks(response)
+        } catch (error) {
+            console.error('Failed to load candidate blocks.', error)
+
+            setCandidateBlocks([])
+            setCandidateErrorMessage(
+                '候補Blockの取得に失敗しました。'
+            )
+        } finally {
+            setIsCandidateLoading(false)
+        }
+    }, [numericPlanId])
+
+    const loadPlanTodos = useCallback(async () => {
+        if (!Number.isInteger(numericPlanId) || numericPlanId < 1) {
+            setTodos([])
+            setTodoErrorMessage('')
+            return
+        }
+
+        try {
+            setIsTodoLoading(true)
+            setTodoErrorMessage('')
+
+            const resopnse = await getPlanTodos(numericPlanId)
+            setTodos(resopnse)
+        } catch (error) {
+            console.error('Failed to load plan todos.', error)
+
+            setTodos([])
+            setTodoErrorMessage(
+                'TODOの取得に失敗しました。'
+            )
+        } finally {
+            setIsTodoLoading(false)
+        }
+    }, [numericPlanId])
+
+    const refreshPlanEditorData = useCallback(async () => {
+        await Promise.allSettled([
+            loadPlanDetail(),
+            loadCandidateBlocks(),
+            loadPlanTodos(),
+        ])
+    }, [loadCandidateBlocks, loadPlanDetail, loadPlanTodos])
 
     // PlanDetails
     useEffect(() => {
-        let isMounted = true
-
-        async function loadPlanDetail() {
-            if (!Number.isInteger(numericPlanId) || numericPlanId < 1) {
-                if (isMounted) {
-                    setErrorType('not-found')
-                    setIsLoading(false)
-                }
-                return
-            }
-
-            try {
-                setIsLoading(true)
-                setErrorType(null)
-
-                const response = await getPlan(numericPlanId)
-
-                if (isMounted) {
-                    setPlanDetail(response)
-                }
-            } catch (error) {
-                console.error('Failed to load plan detail.', error)
-
-                if (!isMounted) {
-                    return
-                }
-
-                setErrorType(
-                    error instanceof ApiError && error.status === 404
-                        ? 'not-found'
-                        : 'network',
-                )
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false)
-                }
-            }
-        }
-
         void loadPlanDetail()
-
-        return () => {
-            isMounted = false
-        }
-    }, [planId])
+    }, [loadPlanDetail])
 
     // CandidateBlocks
     useEffect(() => {
-        let isMounted = true
-
-        async function loadCandidateBlocks() {
-            if (!Number.isInteger(numericPlanId) || numericPlanId < 1) {
-                if (isMounted) {
-                    setCandidateBlocks([])
-                    setCandidateErrorMessage('')
-                }
-                return
-            }
-
-            try {
-                setIsCandidateLoading(true)
-                setCandidateErrorMessage('')
-
-                const response = await getCandidateBlocks(numericPlanId)
-
-                if (isMounted) {
-                    setCandidateBlocks(response)
-                }
-            } catch (error) {
-                console.error('Failed to load candidate blocks.', error)
-
-                if (isMounted) {
-                    setCandidateBlocks([])
-                    setCandidateErrorMessage(
-                        '候補Blockの取得に失敗しました。時間をおいて再度お試しください。',
-                    )
-                }
-            } finally {
-                if (isMounted) {
-                    setIsCandidateLoading(false)
-                }
-            }
-        }
-
         void loadCandidateBlocks()
-
-        return () => {
-            isMounted = false
-        }
-    }, [numericPlanId])
+    }, [loadCandidateBlocks])
 
     // Todos
     useEffect(() => {
-        let isMounted = true
+        void loadPlanTodos()
+    }, [loadPlanTodos])
 
-        async function loadPlanTodos() {
-            if (!Number.isInteger(numericPlanId) || numericPlanId < 1) {
-                if (isMounted) {
-                    setTodos([])
-                    setTodoErrorMessage('')
-                }
+    async function savePositions(nextDays) {
+        const positions = createPositionPayload(nextDays)
+
+        try {
+            setIsSavingPositions(true)
+            setPositionErrorMessage('')
+
+            await updatePositions(numericPlanId, positions)
+
+            return true
+        } catch (error) {
+            console.error('Failed to update plan positions.', error)
+
+            if (error instanceof ApiError && error.status === 400) {
+                setPositionErrorMessage(
+                    '配置を保存できませんでした。Blockの重複、日付、並び順を確認してください。'
+                )
+            } else if (error instanceof ApiError && error.status === 404) {
+                setPositionErrorMessage(
+                    'プランまたはBlockが見つかりません。最新の情報を再度読み込みました。'
+                )
+            } else {
+                setPositionErrorMessage(
+                    '通信に失敗しました。'
+                )
+            }
+
+            return false
+        } finally {
+            await refreshPlanEditorData()
+            setIsSavingPositions(false)
+        }
+    }
+
+    function handleDragStart(event) {
+        setActiveDragData(event.active.data.current ?? null)
+    }
+
+    function handleDragCancel() {
+        setActiveDragData(null)
+    }
+
+    function handleDragEnd(event) {
+        const { active, over } = event
+        setActiveDragData(null)
+
+        if (!planDetail || isSavingPositions || !over) {
+            return
+        }
+
+        const activeData = active.data.current
+        const target = getDropTarget(over)
+
+        if (!activeData || !target) {
+            return
+        }
+
+        const nextDays = cloneDays(planDetail.days)
+
+        if (activeData.dragType === 'candidate-item') {
+            if (target.type !== 'day') {
                 return
             }
 
-            try {
-                setIsTodoLoading(true)
-                setTodoErrorMessage('')
+            const targetDay = nextDays.find(
+                (day) => day.dayNumber === target.dayNumber
+            )
 
-                const response = await getPlanTodos(numericPlanId)
-
-                if (isMounted) {
-                    setTodos(response)
-                }
-            } catch (error) {
-                console.error('Failed to load plan todos.', error)
-
-                if (isMounted) {
-                    setTodos([])
-                    setTodoErrorMessage(
-                        'TODOの取得に失敗しました。時間をおいて再度お試しください。',
-                    )
-                }
-            } finally {
-                if (isMounted) {
-                    setIsTodoLoading(false)
-                }
+            if (!targetDay) {
+                return
             }
+
+            const alreadyPlaced = nextDays.some((day) =>
+            day.positions.some(
+                (position) => position.blockId === activeData.blockId,
+            ),
+        )
+
+            if (alreadyPlaced) {
+                return
+            }
+
+            const insertionIndex = getInsertionIndex(targetDay, target)
+
+            targetDay.positions.splice(
+                insertionIndex,
+                0,
+                { blockId: activeData.blockId },
+            )
+
+            void savePositions(nextDays)
+            return
         }
 
-        void loadPlanTodos()
-
-        return () => {
-            isMounted = false
+        if (activeData.dragType !== 'itinerary-item') {
+            return
         }
-    }, [numericPlanId])
+
+        const sourceDay = nextDays.find(
+            (day) => day.dayNumber === activeData.dayNumber,
+        )
+
+        if (!sourceDay) {
+            return
+        }
+
+        const sourceIndex = sourceDay.positions.findIndex(
+            (position) => position.blockId === activeData.blockId,
+        )
+
+        if (sourceIndex < 0) {
+            return
+        }
+
+        const [movePosition] = sourceDay.positions.splice(sourceIndex, 1)
+
+        if (target.type === 'candidate') {
+            void savePositions(nextDays).then((wasSaved) => {
+                if (wasSaved) {
+                    setLastReturnedBlockId(activeData.blockId)
+                }
+            })
+
+            return
+        }
+
+        const targetDay = nextDays.find(
+            (day) => day.dayNumber === target.dayNumber,
+        )
+
+        if (!targetDay) {
+            return
+        }
+
+        const insertionIndex = getInsertionIndex(targetDay, target)
+
+        targetDay.positions.splice(
+            insertionIndex,
+            0,
+            movePosition,
+        )
+
+        void savePositions(nextDays)
+    }
+
+    const activeDragLabel =
+        activeDragData?.position?.block?.blockName ??
+        activeDragData?.block?.blockName ??
+        ''
 
     return (
         <main className="page plan-edit-page">
@@ -313,6 +668,22 @@ export default function PlanEditPage() {
 
             {!isLoading && !errorType && planDetail && (
                 <>
+                    {isSavingPositions && (
+                        <p
+                            className="status-message status-message-error position-save-message"
+                            role="alert"
+                        >
+                            {positionErrorMessage}
+                        </p>
+                    )}
+
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={pointerWithin}
+                        onDragStart={handleDragStart}
+                        onDragCancel={handleDragCancel}
+                        onDragEnd={handleDragEnd}
+                    >
                     <div
                         className={`plan-editor-layout ${
                             isTodoPanelOpen
@@ -323,32 +694,46 @@ export default function PlanEditPage() {
                         <section
                             className="plan-itinerary-panel"
                             aria-label={`${planDetail.planName}の行程`}
+                            aria-busy={isSavingPositions}
                         >
+                            <p className="itinerary-dnd-guide">
+                                Blockをドラッグ＆ドロップで動かせます。
+                            </p>
 
                             <div className="itinerary-days">
                                 {planDetail.days.map((day) => (
-                                    <PlanDayRow key={day.dayNumber} day={day} />
+                                    <PlanDayRow
+                                        key={day.dayNumber}
+                                        day={day}
+                                        disabled={isSavingPositions}
+                                        isCandidateDragging={isCandidateDragging}
+                                    />
                                 ))}
                             </div>
 
-                            <div className="comparison-legend" aria-label="Block種別の凡例">
-            <span>
-                <i className="legend-color legend-color-activity" />
-                アクティビティ
-            </span>
+                            <div
+                                className="comparison-legend"
+                                aria-label="Block種別の凡例"
+                            >
                                 <span>
-                <i className="legend-color legend-color-transfer" />
-                移動
-            </span>
+                                    <i className="legend-color legend-color-activity" />
+                                    アクティビティ
+                                </span>
+                                                    <span>
+                                    <i className="legend-color legend-color-transfer" />
+                                    移動
+                                </span>
                             </div>
                         </section>
 
                         <div className="plan-editor-side-column">
-
                             <CandidateBlockPanel
                                 isLoading={isCandidateLoading}
                                 errorMessage={candidateErrorMessage}
                                 candidateBlocks={candidateBlocks}
+                                isSaving={isSavingPositions}
+                                candidateDropId={CANDIDATE_DROP_ID}
+                                lastReturnedBlockId={lastReturnedBlockId}
                             />
 
                             <PlanTodoPanel
@@ -360,6 +745,15 @@ export default function PlanEditPage() {
                             />
                         </div>
                     </div>
+
+                    <DragOverlay dropAnimation={null}>
+                        {activeDragLabel && (
+                            <div className="dnd-drag-overlay">
+                                {activeDragLabel}
+                            </div>
+                        )}
+                    </DragOverlay>
+                    </DndContext>
                 </>
             )}
         </main>
