@@ -287,13 +287,13 @@ public class BlockService {
     }
 
     public void updateTransferFields(Transfer transfer, UpdateBlockRequest request) {
-        transfer.setTransferDeparture(transfer.getTransferDeparture());
-        transfer.setTransferArrival(transfer.getTransferArrival());
-        transfer.setTransferMethod(transfer.getTransferMethod());
-        transfer.setTransferCost(transfer.getTransferCost());
-        transfer.setTransferDuration(transfer.getTransferDuration());
-        transfer.setTransferDepartureTime(transfer.getTransferDepartureTime());
-        transfer.setTransferArrivalTime(transfer.getTransferArrivalTime());
+        transfer.setTransferDeparture(request.getTransferDeparture());
+        transfer.setTransferArrival(request.getTransferArrival());
+        transfer.setTransferMethod(request.getTransferMethod());
+        transfer.setTransferCost(request.getTransferCost());
+        transfer.setTransferDuration(request.getTransferDuration());
+        transfer.setTransferDepartureTime(request.getTransferDepartureTime());
+        transfer.setTransferArrivalTime(request.getTransferArrivalTime());
     }
 
     @Transactional(readOnly = true)
