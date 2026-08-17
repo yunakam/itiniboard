@@ -162,7 +162,7 @@ export default function PlanListPage() {
                             displayOptions={displayOptions}
                         />
 
-                        <div className="comparison-legend" aria-label="Block種別の凡例">
+                        <div className="comparison-legend" aria-label="ブロック種別の凡例">
                             <span>
                                 <i className="legend-color legend-color-activity" />
                                 アクティビティ
