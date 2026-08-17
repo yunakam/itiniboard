@@ -29,21 +29,11 @@ public class Activity {
     @Column(name = "activity_type", nullable = false, length = 30)
     private String activityType;
 
-    @Column(name = "activity_cost", precision = 12, scale = 2)
-    private BigDecimal activityCost;
-
-    @Column(name = "activity_duration")
-    private Integer activityDuration;
-
     public Activity(
             Block block,
-            String activityType,
-            BigDecimal activityCost,
-            Integer activityDuration
+            String activityType
     ) {
         this.block = block;
         this.activityType = activityType;
-        this.activityCost = activityCost;
-        this.activityDuration = activityDuration;
     }
 }

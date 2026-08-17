@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,6 +34,12 @@ public class Block {
     @Column(name = "block_details")
     private String blockDetails;
 
+    @Column(name = "block_cost", precision = 12, scale = 2)
+    private BigDecimal blockCost;
+
+    @Column(name = "block_duration")
+    private Integer blockDuration;
+
     @Generated(event = EventType.INSERT)
     @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
     private LocalDateTime createdAt;
@@ -41,10 +48,19 @@ public class Block {
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
-    public Block(String blockType, String blockName, String blockPlace, String blockDetails) {
+    public Block(
+            String blockType,
+            String blockName,
+            String blockPlace,
+            String blockDetails,
+            BigDecimal blockCost,
+            Integer blockDuration
+    ) {
         this.blockType = blockType;
         this.blockName = blockName;
         this.blockPlace = blockPlace;
         this.blockDetails = blockDetails;
+        this.blockCost = blockCost;
+        this.blockDuration = blockDuration;
     }
 }

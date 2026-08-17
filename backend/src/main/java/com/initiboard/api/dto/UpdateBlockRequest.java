@@ -27,20 +27,20 @@ public class UpdateBlockRequest {
 
     private String blockDetails;
 
-    @Size(max = 30, message = "アクティビティタイプは30文字以内で入力してください")
-    private String activityType;
-
     @Digits(
             integer = 10,
             fraction = 2,
             message = "費用は整数部10桁、小数部2桁以内で入力してください"
     )
     @PositiveOrZero(message = "費用は0以上で入力してください")
-    private BigDecimal activityCost;
+    private BigDecimal blockCost;
 
     @PositiveOrZero(message = "所要時間は0以上で入力してください")
     @Max(value = 4294967295L, message = "所要時間が大きすぎます")
-    private Integer activityDuration;
+    private Integer blockDuration;
+
+    @Size(max = 30, message = "アクティビティタイプは30文字以内で入力してください")
+    private String activityType;
 
     @Size(max = 255, message = "出発地は255文字以内で入力してください")
     private String transferDeparture;
@@ -50,18 +50,6 @@ public class UpdateBlockRequest {
 
     @Size(max = 30, message = "移動手段は30文字以内で入力してください")
     private String transferMethod;
-
-    @Digits(
-            integer = 10,
-            fraction = 2,
-            message = "費用は整数部10桁、小数部2桁以内で入力してください"
-    )
-    @PositiveOrZero(message = "費用は0以上で入力してください")
-    private BigDecimal transferCost;
-
-    @PositiveOrZero(message = "所要時間は0以上で入力してください")
-    @Max(value = 4294967295L, message = "入力値が大きすぎます")
-    private Integer transferDuration;
 
     @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime transferDepartureTime;

@@ -17,8 +17,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toList;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -43,7 +41,10 @@ public class PlanService {
     public PlanDetailResponse getPlanById(Long planId) {
         Plan plan = findPlanOrThrow(planId);
 
-        List<BlockPosition> positions = blockPositionRepository.findAllByPlanIdWithBlockOrderByDayAndOrder(planId);
+        List<BlockPosition> positions =
+                blockPositionRepository.findAllByPlanIdWithBlockOrderByDayAndOrder(
+                        planId
+                );
 
         List<Long> blockIds = positions.stream()
                 .map(position -> position.getBlock().getBlockId())
@@ -53,12 +54,18 @@ public class PlanService {
         Map<Long, Activity> activitiesByBlockId = activityRepository
                 .findByBlockIdIn(blockIds)
                 .stream()
-                .collect(Collectors.toMap(Activity::getBlockId, Function.identity()));
+                .collect(Collectors.toMap(
+                        Activity::getBlockId,
+                        Function.identity()
+                ));
 
         Map<Long, Transfer> transfersByBlockId = transferRepository
                 .findByBlockIdIn(blockIds)
                 .stream()
-                .collect(Collectors.toMap(Transfer::getBlockId, Function.identity()));
+                .collect(Collectors.toMap(
+                        Transfer::getBlockId,
+                        Function.identity()
+                ));
 
         Map<Long, Long> incompleteTodoCounts = getIncompleteTodoCounts(blockIds);
 
@@ -97,8 +104,8 @@ public class PlanService {
                 plan.getPlanStartDate(),
                 plan.getPlanEndDate(),
                 dayCount,
-                calculateTotalCost(positions, activitiesByBlockId, transfersByBlockId),
-                calculateTotalTransferDuration(positions, transfersByBlockId),
+                calculateTotalCost(positions),
+                calculateTotalTransferDuration(positions),
                 days
         );
     }
@@ -274,37 +281,9 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
             );
         }
 
-        // Collect the list of blocks (IDs) allocated to the plan
-        List<Long> blockIds = positions.stream()
-                .map(position -> position.getBlock().getBlockId())
-                .distinct()
-                .toList();
-
-        // Get details of activity blocks
-        Map<Long, Activity> activitiesByBlockId = activityRepository
-                .findByBlockIdIn(blockIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        Activity::getBlockId,
-                        Function.identity()
-                ));
-
-        // Get details of transfer blocks
-        Map<Long, Transfer> transfersByBlockId = transferRepository
-                .findByBlockIdIn(blockIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        Transfer::getBlockId,
-                        Function.identity()
-                ));
-
         return new PlanResponse(
                 plan,
-                calculateTotalCost(
-                        positions,
-                        activitiesByBlockId,
-                        transfersByBlockId
-                ),
+                calculateTotalCost(positions),
                 calculateDayCount(plan)
         );
 
@@ -358,16 +337,14 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
                         block.getBlockName(),
                         block.getBlockPlace(),
                         block.getBlockDetails(),
+                        block.getBlockCost(),
+                        block.getBlockDuration(),
 
                         activity != null ? activity.getActivityType() : null,
-                        activity != null ? activity.getActivityCost() : null,
-                        activity != null ? activity.getActivityDuration() : null,
 
                         transfer != null ? transfer.getTransferDeparture() : null,
                         transfer != null ? transfer.getTransferArrival() : null,
                         transfer != null ? transfer.getTransferMethod() : null,
-                        transfer != null ? transfer.getTransferCost() : null,
-                        transfer != null ? transfer.getTransferDuration() : null,
                         transfer != null ? transfer.getTransferDepartureTime() : null,
                         transfer != null ? transfer.getTransferArrivalTime() : null,
 
@@ -385,41 +362,21 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
         );
     }
 
-    private BigDecimal calculateTotalCost(
-            List<BlockPosition> positions,
-            Map<Long, Activity> activitiesByBlockId,
-            Map<Long, Transfer> transfersByBlockId
-    ) {
+    private BigDecimal calculateTotalCost(List<BlockPosition> positions) {
         return positions.stream()
                 .map(BlockPosition::getBlock)
-                .map(Block::getBlockId)
-                .map(blockId -> {
-                    Activity activity = activitiesByBlockId.get(blockId);
-                    if (activity != null) {
-                        return activity.getActivityCost();
-                    }
-
-                    Transfer transfer = transfersByBlockId.get(blockId);
-                    if (transfer != null) {
-                        return transfer.getTransferCost();
-                    }
-
-                    return null;
-                })
+                .map(Block::getBlockCost)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private int calculateTotalTransferDuration(
-            List<BlockPosition> positions,
-            Map<Long, Transfer> transfersByBlockId
+            List<BlockPosition> positions
     ) {
         return positions.stream()
                 .map(BlockPosition::getBlock)
-                .map(Block::getBlockId)
-                .map(transfersByBlockId::get)
-                .filter(Objects::nonNull)
-                .map(Transfer::getTransferDuration)
+                .filter(block -> "transfer".equals(block.getBlockType()))
+                .map(Block::getBlockDuration)
                 .filter(Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .sum();

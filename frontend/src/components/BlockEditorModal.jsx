@@ -12,16 +12,12 @@ const EMPTY_FORM = {
     blockName: '',
     blockPlace: '',
     blockDetails: '',
-
+    blockCost: '',
+    blockDuration: '',
     activityType: '',
-    activityCost: '',
-    activityDuration: '',
-
     transferDeparture: '',
     transferArrival: '',
     transferMethod: '',
-    transferCost: '',
-    transferDuration: '',
     transferDepartureTime: '',
     transferArrivalTime: '',
 }
@@ -32,16 +28,14 @@ function createFormFromBlock(block) {
         blockName: block.blockName ?? '',
         blockPlace: block.blockPlace ?? '',
         blockDetails: block.blockDetails ?? '',
+        blockCost: block.blockCost ?? '',
+        blockDuration: block.blockDuration ?? '',
 
         activityType: block.activityType ?? '',
-        activityCost: block.activityCost ?? '',
-        activityDuration: block.activityDuration ?? '',
 
         transferDeparture: block.transferDeparture ?? '',
         transferArrival: block.transferArrival ?? '',
         transferMethod: block.transferMethod ?? '',
-        transferCost: block.transferCost ?? '',
-        transferDuration: block.transferDuration ?? '',
         transferDepartureTime: toTimeInputValue(block.transferDepartureTime),
         transferArrivalTime: toTimeInputValue(block.transferArrivalTime),
     }
@@ -83,14 +77,14 @@ function createPayload(form) {
         blockName: form.blockName.trim(),
         blockPlace: toOptionalText(form.blockPlace),
         blockDetails: toOptionalText(form.blockDetails),
+        blockCost: toOptionalNumber(form.blockCost),
+        blockDuration: toOptionalNumber(form.blockDuration),
     }
 
     if (form.blockType === 'activity') {
         return {
             ...commonFields,
-            activityType: form.activityType.trim(),
-            activityCost: toOptionalNumber(form.activityCost),
-            activityDuration: toOptionalNumber(form.activityDuration),
+            activityType: toOptionalText(form.activityType),
         }
     }
 
@@ -100,8 +94,6 @@ function createPayload(form) {
             transferDeparture: form.transferDeparture.trim(),
             transferArrival: form.transferArrival.trim(),
             transferMethod: toOptionalText(form.transferMethod),
-            transferCost: toOptionalNumber(form.transferCost),
-            transferDuration: toOptionalNumber(form.transferDuration),
             transferDepartureTime: toApiTime(form.transferDepartureTime),
             transferArrivalTime: toApiTime(form.transferArrivalTime),
         }
@@ -111,10 +103,6 @@ function createPayload(form) {
 function validateForm(form) {
     if (form.blockName.trim() === '') {
         return 'ブロック名を入力してください。'
-    }
-
-    if (form.blockType === 'activity' && form.activityType.trim() === '') {
-        return 'アクティビティタイプを入力してください。'
     }
 
     if (form.blockType === 'transfer' && form.transferDeparture.trim() === '') {
@@ -472,6 +460,12 @@ export default function BlockEditorModal({
                                     />
                                 </div>
 
+                                <CommonBlockFields
+                                    form={form}
+                                    disabled={isFormDisabled}
+                                    onChange={handleFieldChange}
+                                />
+
                                 {form.blockType === 'activity' ? (
                                     <ActivityFields
                                         form={form}
@@ -519,18 +513,50 @@ export default function BlockEditorModal({
     )
 }
 
+function CommonBlockFields({ form, disabled, onChange}) {
+    return (
+        <div classname="block-editor-field-row">
+            <div className="block-editor-field">
+                <label htmlFor="block-cost">費用</label>
+
+                <input
+                    id="block-cost"
+                    name="blockCost"
+                    type="number"
+                    value={form.blockCost}
+                    onChange={onChange}
+                    disabled={disabled}
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                />
+            </div>
+
+            <div className="block-editor-field">
+                <label htmlFor="block-duration">所要時間（分）</label>
+
+                <input
+                    id="block-duration"
+                    name="blockDuration"
+                    type="number"
+                    value={form.blockDuration}
+                    onChange={onChange}
+                    disabled={disabled}
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                />
+            </div>
+        </div>
+    )
+}
+
 function ActivityFields({ form, disabled, onChange }) {
     return (
         <section className="block-editor-type-fields">
             <div className="block-editor-field block-editor-field-compact">
                 <label htmlFor='activity-type'>
                     アクティビティタイプ
-                    <span
-                        className="block-editor-required"
-                        aria-hidden="true"
-                    >
-                        *
-                    </span>
                 </label>
 
                 <select
@@ -539,9 +565,8 @@ function ActivityFields({ form, disabled, onChange }) {
                     value={form.activityType}
                     onChange={onChange}
                     disabled={disabled}
-                    required
                 >
-                    <option valaue="" disabled>未選択</option>
+                    <option valaue="">未設定</option>
                     <option value="観光">🗼 観光</option>
                     <option value="食事">🍴 食事</option>
                     <option value="宿泊">🏨 宿泊</option>
@@ -549,42 +574,6 @@ function ActivityFields({ form, disabled, onChange }) {
                     <option value="体験">🎨 体験</option>
                     <option value="その他">❓ その他</option>
                 </select>
-            </div>
-
-            <div className="block-editor-field-row">
-                <div className="block-editor-field">
-                    <label htmlFor="activity-cost">費用</label>
-
-                    <input
-                        id="activity-cost"
-                        name="activityCost"
-                        type="number"
-                        value={form.activityCost}
-                        onChange={onChange}
-                        disabled={disabled}
-                        min="0"
-                        step="0.01"
-                        inputMode="decimal"
-                    />
-                </div>
-
-                <div className="block-editor-field">
-                    <label htmlFor="activity-duration">
-                        所要時間（分）
-                    </label>
-
-                    <input
-                        id="activity-duration"
-                        name="activityDuration"
-                        type="number"
-                        value={form.activityDuration}
-                        onChange={onChange}
-                        disabled={disabled}
-                        min="0"
-                        step="1"
-                        inputMode="numeric"
-                    />
-                </div>
             </div>
         </section>
     )
@@ -660,42 +649,6 @@ function TransferFields({ form, disabled, onChange }) {
                     <option value="船">⛴️ 船</option>
                     <option value="その他">❓ その他</option>
                 </select>
-            </div>
-
-            <div className="block-editor-field-row">
-                <div className="block-editor-field">
-                    <label htmlFor="transfer-cost">費用</label>
-
-                    <input
-                        id="transfer-cost"
-                        name="transferCost"
-                        type="number"
-                        value={form.transferCost}
-                        onChange={onChange}
-                        disabled={disabled}
-                        min="0"
-                        step="0.01"
-                        inputMode="decimal"
-                    />
-                </div>
-
-                <div className="block-editor-field">
-                    <label htmlFor="transfer-duration">
-                        所要時間（分）
-                    </label>
-
-                    <input
-                        id="transfer-duration"
-                        name="transferDuration"
-                        type="number"
-                        value={form.transferDuration}
-                        onChange={onChange}
-                        disabled={disabled}
-                        min="0"
-                        step="1"
-                        inputMode="numeric"
-                    />
-                </div>
             </div>
 
             <div className="block-editor-field-row">

@@ -8,16 +8,14 @@ public record PlanPositionBlockResponse(
         String blockName,
         String blockPlace,
         String blockDetails,
+        BigDecimal blockCost,
+        Integer blockDuration,
 
         String activityType,
-        BigDecimal activityCost,
-        Integer activityDuration,
 
         String transferDeparture,
         String transferArrival,
         String transferMethod,
-        BigDecimal transferCost,
-        Integer transferDuration,
         LocalTime transferDepartureTime,
         LocalTime transferArrivalTime,
 

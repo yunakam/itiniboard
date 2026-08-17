@@ -3,7 +3,6 @@ package com.initiboard.api.service;
 import com.initiboard.api.dto.*;
 import com.initiboard.api.entity.Activity;
 import com.initiboard.api.entity.Block;
-import com.initiboard.api.entity.Plan;
 import com.initiboard.api.entity.Transfer;
 import com.initiboard.api.repository.*;
 import com.initiboard.api.util.CopyNameGenerator;
@@ -34,7 +33,9 @@ public class BlockService {
                 request.getBlockType(),
                 request.getBlockName(),
                 request.getBlockPlace(),
-                request.getBlockDetails()
+                request.getBlockDetails(),
+                request.getBlockCost(),
+                request.getBlockDuration()
         );
 
         Block savedBlock = blockRepository.save(block);
@@ -42,9 +43,7 @@ public class BlockService {
         if ("activity".equals(request.getBlockType())) {
             Activity activity = new Activity(
                     savedBlock,
-                    request.getActivityType(),
-                    request.getActivityCost(),
-                    request.getActivityDuration()
+                    request.getActivityType()
             );
 
             Activity savedActivity = activityRepository.save(activity);
@@ -63,8 +62,6 @@ public class BlockService {
                     request.getTransferDeparture(),
                     request.getTransferArrival(),
                     request.getTransferMethod(),
-                    request.getTransferCost(),
-                    request.getTransferDuration(),
                     request.getTransferDepartureTime(),
                     request.getTransferArrivalTime()
             );
@@ -132,7 +129,9 @@ public class BlockService {
                 sourceBlock.getBlockType(),
                 duplicateBlockName,
                 sourceBlock.getBlockPlace(),
-                sourceBlock.getBlockDetails()
+                sourceBlock.getBlockDetails(),
+                sourceBlock.getBlockCost(),
+                sourceBlock.getBlockDuration()
         );
 
         Block savedBlock = blockRepository.save(duplicatedBlock);
@@ -145,9 +144,7 @@ public class BlockService {
 
             Activity duplicatedActivity = new Activity(
                     savedBlock,
-                    sourceActivity.getActivityType(),
-                    sourceActivity.getActivityCost(),
-                    sourceActivity.getActivityDuration()
+                    sourceActivity.getActivityType()
             );
 
             Activity savedActivity = activityRepository.save(duplicatedActivity);
@@ -171,8 +168,6 @@ public class BlockService {
                     sourceTransfer.getTransferDeparture(),
                     sourceTransfer.getTransferArrival(),
                     sourceTransfer.getTransferMethod(),
-                    sourceTransfer.getTransferCost(),
-                    sourceTransfer.getTransferDuration(),
                     sourceTransfer.getTransferDepartureTime(),
                     sourceTransfer.getTransferArrivalTime()
             );
@@ -268,30 +263,22 @@ public class BlockService {
         return request.getTransferDeparture() != null
                 || request.getTransferArrival() != null
                 || request.getTransferMethod() != null
-                || request.getTransferCost() != null
-                || request.getTransferDuration() != null
                 || request.getTransferDepartureTime() != null
                 || request.getTransferArrivalTime() != null;
     }
 
     public boolean hasActivityFields(UpdateBlockRequest request) {
-        return request.getActivityType() != null
-                || request.getActivityCost() != null
-                || request.getActivityDuration() != null;
+        return request.getActivityType() != null;
     }
 
     public void updateActivityFields(Activity activity, UpdateBlockRequest request) {
         activity.setActivityType(request.getActivityType());
-        activity.setActivityCost(request.getActivityCost());
-        activity.setActivityDuration(request.getActivityDuration());
     }
 
     public void updateTransferFields(Transfer transfer, UpdateBlockRequest request) {
         transfer.setTransferDeparture(request.getTransferDeparture());
         transfer.setTransferArrival(request.getTransferArrival());
         transfer.setTransferMethod(request.getTransferMethod());
-        transfer.setTransferCost(request.getTransferCost());
-        transfer.setTransferDuration(request.getTransferDuration());
         transfer.setTransferDepartureTime(request.getTransferDepartureTime());
         transfer.setTransferArrivalTime(request.getTransferArrivalTime());
     }
@@ -417,6 +404,8 @@ public class BlockService {
                     block.getBlockType(),
                     block.getBlockName(),
                     block.getBlockPlace(),
+                    block.getBlockCost(),
+                    block.getBlockDuration(),
                     activity.getActivityType(),
                     null,
                     null,
@@ -438,6 +427,8 @@ public class BlockService {
                     block.getBlockType(),
                     block.getBlockName(),
                     block.getBlockPlace(),
+                    block.getBlockCost(),
+                    block.getBlockDuration(),
                     null,
                     transfer.getTransferMethod(),
                     transfer.getTransferDeparture(),

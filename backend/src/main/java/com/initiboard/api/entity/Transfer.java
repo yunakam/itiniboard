@@ -41,12 +41,6 @@ public class Transfer {
     @Column(name = "transfer_method", length = 30)
     private String transferMethod;
 
-    @Column(name = "transfer_cost", precision = 12, scale = 2)
-    private BigDecimal transferCost;
-
-    @Column(name = "transfer_duration")
-    private Integer transferDuration;
-
     @Column(name = "transfer_departure_time")
     private LocalTime transferDepartureTime;
 
@@ -58,8 +52,6 @@ public class Transfer {
             String transferDeparture,
             String transferArrival,
             String transferMethod,
-            BigDecimal transferCost,
-            Integer transferDuration,
             LocalTime transferDepartureTime,
             LocalTime transferArrivalTime
     ) {
@@ -67,8 +59,6 @@ public class Transfer {
         this.transferDeparture = transferDeparture;
         this.transferArrival = transferArrival;
         this.transferMethod = transferMethod;
-        this.transferCost = transferCost;
-        this.transferDuration = transferDuration;
         this.transferDepartureTime = transferDepartureTime;
         this.transferArrivalTime = transferArrivalTime;
     }

@@ -272,9 +272,11 @@ function ItineraryBlockCard({
                     使用中：{block.usedPlanCount}プラン
                 </span>
 
-                <span className="block-card-todo">
-                    TODO　未完{block.incompleteTodoCount}件
-                </span>
+                {block.incompleteTodoCount > 0 && (
+                    <span className="block-card-todo">
+                        未完TODO: {block.incompleteTodoCount}件
+                    </span>
+                )}
             </div>
         </article>
     )
