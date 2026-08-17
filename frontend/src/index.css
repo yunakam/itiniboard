@@ -301,17 +301,6 @@ button {
     cursor: grabbing;
 }
 
-.itinerary-block {
-    min-height: 49px;
-    border-left: 5px solid;
-    border-radius: 7px;
-    padding: 8px 9px;
-    box-shadow: 0 1px 4px rgb(38 48 74 / 7%);
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-}
-
 .itinerary-block:active {
     cursor: grabbing;
 }
@@ -727,17 +716,6 @@ button {
     gap: 8px;
 }
 
-.candidate-block {
-    min-height: 49px;
-    border-left: 5px solid;
-    border-radius: 7px;
-    padding: 8px 9px;
-    box-shadow: 0 1px 4px rgb(38 48 74 / 7%);
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-}
-
 .candidate-block:active {
     cursor: grabbing;
 }
@@ -752,11 +730,6 @@ button {
     border-color: #5798d3;
     background: #dceeff;
     color: #28577f;
-}
-
-.candidate-block-title {
-    display: block;
-    font-size: 13px;
 }
 
 .candidate-block-meta {
@@ -1089,10 +1062,15 @@ button {
     color: #25355d;
 }
 
-.candidate-create-button:focus-visible,
-.block-edit-button:focus-visible {
+.candidate-create-button:focus-visible {
     outline: 3px solid rgb(87 152 211 / 40%);
     outline-offset: 2px;
+}
+
+.candidate-create-button:disabled {
+    cursor: not-allowed;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .candidate-block-card-header,
@@ -1103,15 +1081,74 @@ button {
     gap: 8px;
 }
 
-.candidate-block-card-header .candidate-block-title,
-.itinerary-block-card-header .itinerary-block-title {
-    min-width: 0;
-    flex: 1;
+/* Blockカード共通レイアウト */
+
+.block-card-header {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) 25px;
+    align-items: center;
+    gap: 6px;
 }
 
+.block-card-leading-icon {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.candidate-block-title,
+.itinerary-block-title {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.block-card-secondary-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content max-content;
+    align-items: center;
+    column-gap: 16px;
+    margin-top: 5px;
+    color: currentcolor;
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1.35;
+}
+
+.block-card-location {
+    min-width: 0;
+    overflow: hidden;
+    opacity: 0.85;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.block-card-usage {
+    font-weight: 400;
+    opacity: 0.85;
+    white-space: nowrap;
+}
+
+.block-card-todo {
+    justify-self: end;
+    color: #a14852;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/*
+ * 編集アイコンの列幅は常に確保する。
+ * 通常は透明にし、カード上のホバーまたはキーボードfocus時だけ表示する。
+ */
 .block-edit-button {
     display: inline-grid;
-    flex: 0 0 auto;
     width: 25px;
     height: 25px;
     place-items: center;
@@ -1124,7 +1161,22 @@ button {
     font-size: 16px;
     font-weight: 700;
     line-height: 1;
+    opacity: 0;
+    pointer-events: none;
     touch-action: manipulation;
+    transition:
+            opacity 0.15s ease,
+            background-color 0.15s ease,
+            border-color 0.15s ease;
+}
+
+.candidate-block:hover .block-edit-button,
+.candidate-block:focus-within .block-edit-button,
+.itinerary-block:hover .block-edit-button,
+.itinerary-block:focus-within .block-edit-button,
+.block-edit-button:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .block-edit-button:hover:not(:disabled) {
@@ -1132,9 +1184,15 @@ button {
     background: rgb(255 255 255 / 82%);
 }
 
+.block-edit-button:focus-visible {
+    outline: 3px solid rgb(87 152 211 / 40%);
+    outline-offset: 2px;
+}
+
 .block-edit-button:disabled {
     cursor: not-allowed;
-    opacity: 0.55;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .modal-overlay {

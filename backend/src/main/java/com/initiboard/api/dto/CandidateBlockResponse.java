@@ -6,9 +6,11 @@ public record CandidateBlockResponse(
         Long blockId,
         String blockType,
         String blockName,
-        String summary,
-            // activity: blockPlace if exists, else activityType
-            // transfer: transferDeparture + " → " + transferArrival
+        String blockPlace,
+        String activityType,
+        String transferMethod,
+        String transferDeparture,
+        String transferArrival,
         long incompleteTodoCount,
         long usedPlanCount
 ) {

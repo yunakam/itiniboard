@@ -1,22 +1,27 @@
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 
+import {
+    getBlockLeadingIcon,
+    getBlockLocationLabel,
+} from '../utils/blockLabels'
+
 export default function CandidateBlockPanel({
-    isLoading,
-    errorMessage,
-    candidateBlocks,
-    isSaving,
-    isInteractionLocked,
-    candidateDropId,
-    lastReturnedBlockId,
-    onCreateBlock,
-    onEditBlock,
-}) {
+                                                isLoading,
+                                                errorMessage,
+                                                candidateBlocks,
+                                                isSaving,
+                                                isInteractionLocked,
+                                                candidateDropId,
+                                                lastReturnedBlockId,
+                                                onCreateBlock,
+                                                onEditBlock,
+                                            }) {
     const { isOver, setNodeRef } = useDroppable({
         id: candidateDropId,
         disabled: isSaving,
         data: {
-            dropType: 'candidate'
+            dropType: 'candidate',
         },
     })
 
@@ -41,27 +46,30 @@ export default function CandidateBlockPanel({
             aria-label="候補ブロックエリア"
         >
             <div className="candidate-panel-header">
-                <h2>作成済ブロック</h2>
-                {!isLoading && !errorMessage && (
-                    <span className="candidate-block-count">
-                        {candidateBlocks.length}件
-                    </span>
-                )}
-            </div>
+                <div className="candidate-panel-title-row">
+                    <h2>作成済ブロック</h2>
 
-            <button
-                className="candidate-create-button"
-                type="button"
-                onClick={onCreateBlock}
-                disabled={isInteractionLocked}
-            >
-                + 新規ブロック
-            </button>
+                    {!isLoading && !errorMessage && (
+                        <span className="candidate-block-count">
+                            {candidateBlocks.length}件
+                        </span>
+                    )}
+                </div>
+
+                <button
+                    className="candidate-create-button"
+                    type="button"
+                    onClick={onCreateBlock}
+                    disabled={isInteractionLocked}
+                >
+                    ＋ 新規Block
+                </button>
+            </div>
 
             <div className="candidate-panel-content">
                 {isLoading && (
                     <p className="candidate-panel-message">
-                        候補ブロックを読み込んでいます...
+                        候補Blockを読み込んでいます。
                     </p>
                 )}
 
@@ -75,7 +83,7 @@ export default function CandidateBlockPanel({
                     !errorMessage &&
                     candidateBlocks.length === 0 && (
                         <p className="candidate-panel-message">
-                            このプランに追加できる候補ブロックはありません。
+                            このPlanに追加できる候補Blockはありません。
                         </p>
                     )}
 
@@ -89,7 +97,7 @@ export default function CandidateBlockPanel({
                                     block={block}
                                     disabled={isSaving}
                                     isInteractionLocked={
-                                    isInteractionLocked
+                                        isInteractionLocked
                                     }
                                     onEditBlock={onEditBlock}
                                 />
@@ -102,12 +110,14 @@ export default function CandidateBlockPanel({
 }
 
 function CandidateBlockCard({
-    block,
-    disabled,
-    isInteractionLocked,
-    onEditBlock,
-}) {
+                                block,
+                                disabled,
+                                isInteractionLocked,
+                                onEditBlock,
+                            }) {
     const isTransfer = block.blockType === 'transfer'
+    const leadingIcon = getBlockLeadingIcon(block)
+    const locationLabel = getBlockLocationLabel(block)
 
     const {
         attributes,
@@ -131,9 +141,8 @@ function CandidateBlockCard({
         transition,
     }
 
-    // ブロックカード上の「編集」ボタンをクリックしてもドラッグ開始として解釈されないようにする
     function handleEditPointerDown(event) {
-        event.stopPropagation()     // 親要素へのイベントの伝播を止める
+        event.stopPropagation()
     }
 
     function handleEditClick(event) {
@@ -155,7 +164,14 @@ function CandidateBlockCard({
             {...attributes}
             {...listeners}
         >
-            <div className="candidate-block-card-header">
+            <div className="block-card-header">
+                <span
+                    className="block-card-leading-icon"
+                    aria-hidden="true"
+                >
+                    {leadingIcon}
+                </span>
+
                 <strong className="candidate-block-title">
                     {block.blockName}
                 </strong>
@@ -168,33 +184,26 @@ function CandidateBlockCard({
                     disabled={isInteractionLocked}
                     aria-label={`${block.blockName}を編集`}
                     title="ブロックを編集"
-                    >
+                >
                     ✎
                 </button>
             </div>
 
-            <div className="candidate-block-meta">
-                <span>
-                    {isTransfer ? '移動' : 'アクティビティ'}
+            <div className="block-card-secondary-row">
+                <span
+                    className="block-card-location"
+                    title={locationLabel}
+                >
+                    {locationLabel}
                 </span>
 
-                {block.summary && (
-                    <span className="candidate-block-summary">
-                        {block.summary}
-                    </span>
-                )}
+                <span className="block-card-usage">
+                    使用中：{block.usedPlanCount}プラン
+                </span>
 
-                {block.incompleteTodoCount > 0 && (
-                    <span className="candidate-block-todo">
-                        □ 未完TODO {block.incompleteTodoCount}件
-                    </span>
-                )}
-
-                {block.usedPlanCount > 0 && (
-                    <span className="candidate-block-usage">
-                        使用中：{block.usedPlanCount}プラン
-                    </span>
-                )}
+                <span className="block-card-todo">
+                    TODO　未完{block.incompleteTodoCount}件
+                </span>
             </div>
         </article>
     )

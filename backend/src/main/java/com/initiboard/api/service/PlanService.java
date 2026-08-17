@@ -62,6 +62,8 @@ public class PlanService {
 
         Map<Long, Long> incompleteTodoCounts = getIncompleteTodoCounts(blockIds);
 
+        Map<Long, Long> usedPlanCounts = getUsedPlanCounts(blockIds);
+
         Map<Integer, List<PlanPositionDetailResponse>> positionByDay = positions
                 .stream()
                 .collect(Collectors.groupingBy(
@@ -72,7 +74,8 @@ public class PlanService {
                                         position,
                                         activitiesByBlockId,
                                         transfersByBlockId,
-                                        incompleteTodoCounts
+                                        incompleteTodoCounts,
+                                        usedPlanCounts
                                 ),
                                 Collectors.toList()
                         )
@@ -322,12 +325,26 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
 
     }
 
+    private Map<Long, Long> getUsedPlanCounts(List<Long> blockIds) {
+        if (blockIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return blockPositionRepository.countUsedPlansByBlockIds(blockIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).longValue()
+                ));
+    }
+
     private PlanPositionDetailResponse toPlanPositionDetailResponse(
             /* BlockPosition, Block, Activity/Transfer, TODO 集計をフロントエンド用の1配置分 DTO に変換 */
             BlockPosition position,
             Map<Long, Activity> activitiesByBlockId,
             Map<Long, Transfer> transfersByBlockId,
-            Map<Long, Long> incompleteTodoCounts
+            Map<Long, Long> incompleteTodoCounts,
+            Map<Long, Long> usedPlanCounts
     ) {
         Block block = position.getBlock();
         Long blockId = block.getBlockId();
@@ -354,7 +371,9 @@ public List<PlanTodoResponse> getPlanTodos(Long planId) {
                         transfer != null ? transfer.getTransferDepartureTime() : null,
                         transfer != null ? transfer.getTransferArrivalTime() : null,
 
-                        incompleteTodoCounts.getOrDefault(blockId, 0L)
+                        incompleteTodoCounts.getOrDefault(blockId, 0L),
+                        usedPlanCounts.getOrDefault(blockId, 0L)
+
                 );
 
         return new PlanPositionDetailResponse(

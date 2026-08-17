@@ -22,6 +22,19 @@ public interface BlockPositionRepository
             @Param("blockId") Long blockId
     );
 
+    // Count plans that use the blocks included in a list.
+    @Query("""
+        SELECT
+            bp.block.blockId,
+            COUNT(DISTINCT bp.plan.planId)
+        FROM BlockPosition bp
+        WHERE bp.block.blockId IN :blockIds
+        GROUP BY bp.block.blockId
+        """)
+    List<Object[]> countUsedPlansByBlockIds(
+            @Param("blockIds") List<Long> blockIds
+    );
+
     // Find plan IDs and names that use the specified block.
     @Query("""
             SELECT DISTINCT

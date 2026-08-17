@@ -66,8 +66,7 @@ function BlockCard({ position }) {
                     <>
                         {block.transferMethod && <span>{block.transferMethod}</span>}
                         <span className="comparison-place">
-                            出発：{block.transferDeparture || '未設定'} ／ 到着：
-                            {block.transferArrival || '未設定'}
+                            {block.transferDeparture || '未設定'} → {block.transferArrival || '未設定'}
                         </span>
                     </>
                 ) : (
@@ -75,7 +74,7 @@ function BlockCard({ position }) {
                         {block.activityType && <span>{block.activityType}</span>}
                         {block.blockPlace && (
                             <span className="comparison-place">
-                                場所：{block.blockPlace}
+                                {block.blockPlace}
                             </span>
                         )}
                     </>

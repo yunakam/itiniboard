@@ -21,6 +21,7 @@ public record PlanPositionBlockResponse(
         LocalTime transferDepartureTime,
         LocalTime transferArrivalTime,
 
-        long incompleteTodoCount
+        long incompleteTodoCount,
+        long usedPlanCount
 ) {
 }

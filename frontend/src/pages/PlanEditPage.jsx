@@ -28,6 +28,7 @@ import {
 import CandidateBlockPanel from '../components/CandidateBlockPanel'
 import BlockEditorModal from '../components/BlockEditorModal'
 import PlanTodoPanel from '../components/PlanTodoPanel.jsx'
+import { getBlockLeadingIcon, getBlockLocationLabel } from '../utils/blockLabels'
 
 import {
     DEFAULT_DISPLAY_OPTIONS,
@@ -36,7 +37,7 @@ import {
 } from '../utils/formatters'
 
 const DISPLAY_OPTIONS = DEFAULT_DISPLAY_OPTIONS
-const CANDIDATE_DROP_ID = 'candidate-drop'  //
+const CANDIDATE_DROP_ID = 'candidate-drop'
 
 // 行程カード用のDnD ID: e.g. 'day-1'
 function getItineraryItemId(blockId) {
@@ -181,6 +182,8 @@ function ItineraryBlockCard({
 }) {
     const { block } = position
     const isTransfer = block.blockType === 'transfer'
+    const leadingIcon = getBlockLeadingIcon(block)
+    const locationLabel = getBlockLocationLabel(block)
 
     // id を渡して、Drag & Dropに必要な変数or関数を一斉に受け取る
     const isSortableDisabled = disabled || isCandidateDragging
@@ -232,7 +235,14 @@ function ItineraryBlockCard({
             {...attributes}
             {...listeners}
         >
-            <div className="itinerary-block-card-header">
+            <div className="block-card-header">
+                <span
+                    className="block-card-leading-icon"
+                    aria-hidden="true"
+                >
+                    {leadingIcon}
+                </span>
+
                 <strong className="itinerary-block-title">
                     {block.blockName}
                 </strong>
@@ -244,39 +254,27 @@ function ItineraryBlockCard({
                     onClick={handleEditClick}
                     disabled={isInteractionLocked}
                     aria-label={`${block.blockName}を編集`}
-                    title="ブロックを編集"
+                    title="Blockを編集"
                 >
                     ✎
                 </button>
             </div>
 
-            <div className="itinerary-block-meta">
-                {isTransfer ? (
-                    <>
-                        {block.transferMethod && (
-                            <span>{block.transferMethod}</span>
-                        )}
-                        <span className="itinerary-block-place">
-                            出発：{block.transferDeparture || '未設定'} ／ 到着：
-                            {block.transferArrival || '未設定'}
-                        </span>
-                    </>
-                ) : (
-                    <>
-                        {block.activityType && <span>{block.activityType}</span>}
-                        {block.blockPlace && (
-                            <span className="itinerary-block-place">
-                                場所：{block.blockPlace}
-                            </span>
-                        )}
-                    </>
-                )}
+            <div className="block-card-secondary-row">
+                <span
+                    className="block-card-location"
+                    title={locationLabel}
+                >
+                    {locationLabel}
+                </span>
 
-                {block.incompleteTodoCount > 0 && (
-                    <span className="itinerary-block-todo">
-                        □ 未完TODO {block.incompleteTodoCount}件
-                    </span>
-                )}
+                            <span className="block-card-usage">
+                    使用中：{block.usedPlanCount}プラン
+                </span>
+
+                <span className="block-card-todo">
+                    TODO　未完{block.incompleteTodoCount}件
+                </span>
             </div>
         </article>
     )

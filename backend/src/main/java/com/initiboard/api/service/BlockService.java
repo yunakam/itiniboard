@@ -405,17 +405,6 @@ public class BlockService {
                 block.getBlockId()
         );
 
-        return new CandidateBlockResponse(
-                block.getBlockId(),
-                block.getBlockType(),
-                block.getBlockName(),
-                createSummary(block),
-                incompleteTodoCount,
-                usedPlanCount
-        );
-    }
-
-    private String createSummary(Block block) {
         if ("activity".equals(block.getBlockType())) {
             Activity activity = activityRepository.findById(block.getBlockId())
                     .orElseThrow(() -> new IllegalStateException(
@@ -423,12 +412,18 @@ public class BlockService {
                                     + block.getBlockId()
                     ));
 
-            if (block.getBlockPlace() != null
-                    && !block.getBlockPlace().isBlank()) {
-                return block.getBlockPlace();
-            }
-
-            return activity.getActivityType();
+            return new CandidateBlockResponse(
+                    block.getBlockId(),
+                    block.getBlockType(),
+                    block.getBlockName(),
+                    block.getBlockPlace(),
+                    activity.getActivityType(),
+                    null,
+                    null,
+                    null,
+                    incompleteTodoCount,
+                    usedPlanCount
+            );
         }
 
         if ("transfer".equals(block.getBlockType())) {
@@ -438,9 +433,18 @@ public class BlockService {
                                     + block.getBlockId()
                     ));
 
-            return transfer.getTransferDeparture()
-                    + " → "
-                    + transfer.getTransferArrival();
+            return new CandidateBlockResponse(
+                    block.getBlockId(),
+                    block.getBlockType(),
+                    block.getBlockName(),
+                    block.getBlockPlace(),
+                    null,
+                    transfer.getTransferMethod(),
+                    transfer.getTransferDeparture(),
+                    transfer.getTransferArrival(),
+                    incompleteTodoCount,
+                    usedPlanCount
+            );
         }
 
         throw new IllegalStateException(
