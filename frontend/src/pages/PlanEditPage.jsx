@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
     DndContext,
@@ -8,13 +8,12 @@ import {
     useDroppable,
     useSensor,
     useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core'
 import {
-    arrayMove,
     SortableContext,
     useSortable,
     verticalListSortingStrategy,
-} from "@dnd-kit/sortable";     // for drag & drop
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
 import { ApiError } from '../api/client'
@@ -23,9 +22,12 @@ import {
     getPlanTodos,
     updatePositions,
 } from '../api/plans'
+import {
+    getCandidateBlocks,
+} from '../api/blocks'
 import CandidateBlockPanel from '../components/CandidateBlockPanel'
-import { getCandidateBlocks } from '../api/blocks'
-import PlanTodoPanel from "../components/PlanTodoPanel.jsx";
+import BlockEditorModal from '../components/BlockEditorModal'
+import PlanTodoPanel from '../components/PlanTodoPanel.jsx'
 
 import {
     DEFAULT_DISPLAY_OPTIONS,
@@ -174,12 +176,15 @@ function ItineraryBlockCard({
     position,
     disabled,
     isCandidateDragging,
+    isInteractionLocked,
+    onEditBlock,
 }) {
     const { block } = position
     const isTransfer = block.blockType === 'transfer'
 
     // id を渡して、Drag & Dropに必要な変数or関数を一斉に受け取る
     const isSortableDisabled = disabled || isCandidateDragging
+
     const {
         attributes, // マウスを使わないユーザーもD&Dできるようにする
         listeners,  // ドラッグ開始のためのイベント
@@ -203,6 +208,16 @@ function ItineraryBlockCard({
         transition,
     }
 
+    // ブロックカード上の「編集」ボタンをクリックしてもドラッグ開始として解釈されないようにする
+    function handleEditPointerDown(event) {
+        event.stopPropagation()
+    }
+
+    function handleEditClick(event) {
+        event.stopPropagation()
+        onEditBlock(position.blockId)
+    }
+
     return (
         <article
             ref={setNodeRef}
@@ -217,7 +232,23 @@ function ItineraryBlockCard({
             {...attributes}
             {...listeners}
         >
-            <strong className="itinerary-block-title">{block.blockName}</strong>
+            <div className="itinerary-block-card-header">
+                <strong className="itinerary-block-title">
+                    {block.blockName}
+                </strong>
+
+                <button
+                    className="block-edit-button"
+                    type="button"
+                    onPointerDown={handleEditPointerDown}
+                    onClick={handleEditClick}
+                    disabled={isInteractionLocked}
+                    aria-label={`${block.blockName}を編集`}
+                    title="ブロックを編集"
+                >
+                    ✎
+                </button>
+            </div>
 
             <div className="itinerary-block-meta">
                 {isTransfer ? (
@@ -255,6 +286,8 @@ function PlanDayRow({
     day,
     disabled,
     isCandidateDragging,
+    isInteractionLocked,
+    onEditBlock,
 }) {
     const sortedPositions = useMemo(
         () =>
@@ -284,12 +317,12 @@ function PlanDayRow({
             <div
                 ref={setNodeRef}
                 className={`itinerary-day-content ${
-                isOver ? 'dnd-drop-zone-active' : ''
+                    isOver ? 'dnd-drop-zone-active' : ''
                 } ${disabled ? 'dnd-item-disabled' : ''}`}
             >
                 <SortableContext
                     items={sortedPositions.map((position) =>
-                    getItineraryItemId(position.blockId),
+                        getItineraryItemId(position.blockId),
                     )}
                     strategy={verticalListSortingStrategy}
                 >
@@ -302,6 +335,8 @@ function PlanDayRow({
                                 position={position}
                                 disabled={disabled}
                                 isCandidateDragging={isCandidateDragging}
+                                onInteractionLocked={isInteractionLocked}
+                                onEditBlock={onEditBlock}
                             />
 
                             <ItineraryInsertionZone
@@ -324,9 +359,7 @@ function PlanDayRow({
                 </SortableContext>
 
                 {sortedPositions.length === 0 && (
-                    <p className="itinerary-empty-drop-zone">
-                        {/*Blockをドロップできます*/}
-                    </p>
+                    <p className="itinerary-empty-drop-zone" />
                 )}
             </div>
         </section>
@@ -355,8 +388,13 @@ export default function PlanEditPage() {
     const [activeDragData, setActiveDragData] = useState(null)
     const [lastReturnedBlockId, setLastReturnedBlockId] = useState(null)
 
+    const [blockModal, setBlockModal] = useState(null)
+    const [isSavingBlock, setIsSavingBlock] = useState(false)
+
     const numericPlanId = Number(planId)
     const isCandidateDragging = activeDragData?.dragType === 'candidate-item'
+    const isDndLocked = isSavingPositions || isSavingBlock
+    const isInteractionLocked = isDndLocked || activeDragData !== null
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -412,7 +450,7 @@ export default function PlanEditPage() {
 
             setCandidateBlocks([])
             setCandidateErrorMessage(
-                '候補Blockの取得に失敗しました。'
+                '候補ブロックの取得に失敗しました。'
             )
         } finally {
             setIsCandidateLoading(false)
@@ -482,11 +520,11 @@ export default function PlanEditPage() {
 
             if (error instanceof ApiError && error.status === 400) {
                 setPositionErrorMessage(
-                    '配置を保存できませんでした。Blockの重複、日付、並び順を確認してください。'
+                    '配置を保存できませんでした。ブロックの重複、日付、並び順を確認してください。'
                 )
             } else if (error instanceof ApiError && error.status === 404) {
                 setPositionErrorMessage(
-                    'プランまたはBlockが見つかりません。最新の情報を再度読み込みました。'
+                    'プランまたはブロックが見つかりません。最新の情報を再度読み込みました。'
                 )
             } else {
                 setPositionErrorMessage(
@@ -501,6 +539,45 @@ export default function PlanEditPage() {
         }
     }
 
+    function handleOpenCreateBlockModal() {
+        if (isInteractionLocked) {
+            return
+        }
+
+        setBlockModal({
+            mode: 'create',
+            blockId: null,
+        })
+    }
+
+    function handleOpenEditBlockModal(blockId) {
+        if (isInteractionLocked) {
+            return
+        }
+
+        setBlockModal({
+            mode: 'edit',
+            blockId,
+        })
+    }
+
+    function handleCloseBlockModal() {
+        if (isSavingBlock) {
+            return
+        }
+
+        setBlockModal(null)
+    }
+
+    async function handleBlockSaved({ mode }) {
+        if (mode === 'edit') {
+            await refreshPlanEditorData()
+            return
+        }
+
+        await loadCandidateBlocks()
+    }
+
     function handleDragStart(event) {
         setActiveDragData(event.active.data.current ?? null)
     }
@@ -513,7 +590,7 @@ export default function PlanEditPage() {
         const { active, over } = event
         setActiveDragData(null)
 
-        if (!planDetail || isSavingPositions || !over) {
+        if (!planDetail || isDndLocked || !over) {
             return
         }
 
@@ -694,12 +771,8 @@ export default function PlanEditPage() {
                         <section
                             className="plan-itinerary-panel"
                             aria-label={`${planDetail.planName}の行程`}
-                            aria-busy={isSavingPositions}
+                            aria-busy={isDndLocked}
                         >
-                            <p className="itinerary-dnd-guide">
-                                Blockをドラッグ＆ドロップで動かせます。
-                            </p>
-
                             <div className="itinerary-days">
                                 {planDetail.days.map((day) => (
                                     <PlanDayRow
@@ -707,13 +780,15 @@ export default function PlanEditPage() {
                                         day={day}
                                         disabled={isSavingPositions}
                                         isCandidateDragging={isCandidateDragging}
+                                        isInteractionLocked={isInteractionLocked}
+                                        onEditBlock={handleOpenEditBlockModal}
                                     />
                                 ))}
                             </div>
 
                             <div
                                 className="comparison-legend"
-                                aria-label="Block種別の凡例"
+                                aria-label="ブロック種別の凡例"
                             >
                                 <span>
                                     <i className="legend-color legend-color-activity" />
@@ -732,8 +807,11 @@ export default function PlanEditPage() {
                                 errorMessage={candidateErrorMessage}
                                 candidateBlocks={candidateBlocks}
                                 isSaving={isSavingPositions}
+                                isInteractionLocked={isInteractionLocked}
                                 candidateDropId={CANDIDATE_DROP_ID}
                                 lastReturnedBlockId={lastReturnedBlockId}
+                                onCreateBlock={handleOpenCreateBlockModal}
+                                onEditBlock={handleOpenEditBlockModal}
                             />
 
                             <PlanTodoPanel
@@ -754,6 +832,16 @@ export default function PlanEditPage() {
                         )}
                     </DragOverlay>
                     </DndContext>
+
+                    {blockModal && (
+                        <BlockEditorModal
+                            mode={blockModal.mode}
+                            blockId={blockModal.blockId}
+                            onClose={handleCloseBlockModal}
+                            onSaved={handleBlockSaved}
+                            onSavingChange={setIsSavingBlock}
+                        />
+                    )}
                 </>
             )}
         </main>
