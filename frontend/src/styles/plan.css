@@ -1,0 +1,567 @@
+/* ========================================
+ * プラン比較表
+ * ======================================== */
+
+.comparison-table-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 320px;
+    overflow: hidden;
+    border: 1px solid #e0e6ef;
+    border-radius: 11px;
+    background: #ffffff;
+    box-shadow: 0 3px 12px rgb(38 48 74 / 4%);
+}
+
+.comparison-table-scroll-area {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+    scrollbar-gutter: stable;
+}
+
+.comparison-table-wrapper-drawer-open .comparison-table-scroll-area {
+    padding-right: 330px;
+}
+
+.comparison-table {
+    display: grid;
+    width: max-content;
+    min-width: 100%;
+}
+
+.comparison-corner,
+.comparison-plan-header-wrapper {
+    position: sticky;
+    top: 0;
+    height: 70px;
+    border-right: 1px solid #dbe1ec;
+    border-bottom: 1px solid #dbe1ec;
+    background: #f0f3f9;
+}
+
+.comparison-corner {
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    min-height: 70px;
+    padding: 10px 16px;
+    color: #687388;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.comparison-plan-header-wrapper {
+    z-index: 3;
+    min-width: 240px;
+}
+
+.comparison-plan-header {
+    position: relative;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    padding: 10px 16px;
+    border: 0;
+    background: transparent;
+    color: #27324a;
+    text-align: left;
+    cursor: pointer;
+}
+
+.comparison-plan-header:hover,
+.comparison-plan-header-selected {
+    background: #e5ebf7;
+}
+
+.comparison-plan-header strong,
+.comparison-plan-header span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.comparison-plan-header strong {
+    margin-bottom: 4px;
+    color: #27324a;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.comparison-plan-header span {
+    color: #687388;
+    font-size: 12px;
+}
+
+.comparison-plan-header-wrapper:hover .comparison-plan-header strong,
+.comparison-plan-header-wrapper:hover .comparison-plan-header span {
+    max-width: calc(100% - 50px);
+}
+
+.comparison-plan-edit-button {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    right: 10px;
+    display: none;
+    width: 30px;
+    height: 30px;
+    transform: translateY(-50%);
+    border: 1px solid #aebbd0;
+    border-radius: 6px;
+    padding: 0;
+    background: #ffffff;
+    color: #405270;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.comparison-plan-header-wrapper:hover .comparison-plan-edit-button,
+.comparison-plan-edit-button:focus-visible {
+    display: inline-grid;
+    place-items: center;
+}
+
+.comparison-plan-edit-button:hover {
+    border-color: #7e91ae;
+    background: #e8eff9;
+    color: #25355d;
+}
+
+.comparison-plan-edit-button:focus-visible {
+    outline: 3px solid rgb(87 152 211 / 40%);
+    outline-offset: 2px;
+}
+
+.comparison-date,
+.comparison-cell {
+    min-height: 166px;
+    border-right: 1px solid #e5e9f0;
+    border-bottom: 1px solid #e1e6ef;
+}
+
+.comparison-date {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    padding: 17px 14px;
+    background: #fbfcff;
+}
+
+.comparison-date strong {
+    display: block;
+    font-size: 17px;
+}
+
+.comparison-date span {
+    color: #788399;
+    font-size: 12px;
+}
+
+.comparison-date-saturday {
+    color: #3674bb;
+}
+
+.comparison-date-sunday {
+    color: #c24b57;
+}
+
+.comparison-cell {
+    padding: 12px;
+}
+
+.comparison-block-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.comparison-resize-handle {
+    display: flex;
+    flex: 0 0 18px;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 18px;
+    border-top: 1px solid #d9e0eb;
+    background: #f8faff;
+    color: #7c889d;
+    cursor: row-resize;
+    touch-action: none;
+    user-select: none;
+}
+
+.comparison-resize-handle:hover {
+    background: #edf2fa;
+}
+
+.comparison-resize-handle:active {
+    background: #dfe9f7;
+}
+
+.comparison-resize-handle span {
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentcolor;
+}
+
+/* ========================================
+ * プラン編集画面
+ * ======================================== */
+
+.plan-edit-page {
+    max-width: 1580px;
+    margin: 0 auto;
+}
+
+.plan-edit-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 20px;
+}
+
+.plan-edit-header h1 {
+    margin: 0;
+    font-size: 26px;
+}
+
+.plan-edit-eyebrow {
+    margin: 0 0 5px;
+    color: #68758c;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.plan-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 7px;
+    color: #68758c;
+    font-size: 14px;
+}
+
+.plan-summary strong {
+    font-weight: 500;
+}
+
+.plan-duration-badge {
+    border-radius: 999px;
+    padding: 4px 9px;
+    background: #e8eff9;
+    color: #40597d;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.plan-editor-layout {
+    display: grid;
+    gap: 20px;
+    align-items: start;
+}
+
+.plan-editor-layout-todo-open {
+    grid-template-columns: minmax(0, 1fr) 330px;
+}
+
+.plan-editor-side-column {
+    position: sticky;
+    top: 24px;
+    display: grid;
+    grid-template-rows: minmax(220px, 1fr) minmax(220px, 1fr);
+    gap: 20px;
+    max-height: calc(100vh - 48px);
+}
+
+/* ========================================
+ * 行程エリア
+ * ======================================== */
+
+.itinerary-days {
+    overflow: hidden;
+    border: 1px solid #e0e6ef;
+    border-radius: 11px;
+    background: #ffffff;
+    box-shadow: 0 3px 12px rgb(38 48 74 / 4%);
+}
+
+.itinerary-day {
+    display: grid;
+    grid-template-columns: 128px minmax(0, 1fr);
+    min-height: 96px;
+    border-bottom: 1px solid #e5eaf1;
+}
+
+.itinerary-day:last-child {
+    border-bottom: 0;
+}
+
+.itinerary-day-date {
+    padding: 16px;
+    border-right: 1px solid #e5eaf1;
+    background: #fbfcff;
+}
+
+.itinerary-day-date strong {
+    display: block;
+    font-size: 17px;
+}
+
+.itinerary-day-date span {
+    color: #788399;
+    font-size: 12px;
+}
+
+.itinerary-day-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 96px;
+    padding: 12px;
+    border: 2px solid transparent;
+    transition:
+            border-color 0.15s ease,
+            background-color 0.15s ease;
+}
+
+.itinerary-dnd-guide {
+    margin: 0 0 9px 4px;
+    color: #62718b;
+    font-size: 12px;
+}
+
+.position-save-message {
+    margin: 0 0 16px;
+}
+
+/* ========================================
+ * 候補Blockパネル
+ * ======================================== */
+
+.candidate-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 220px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    border-radius: 11px;
+    background: #ffffff;
+    box-shadow: 0 3px 12px rgb(38 48 74 / 4%);
+    transition:
+            border-color 0.15s ease,
+            background-color 0.15s ease,
+            box-shadow 0.15s ease;
+}
+
+.candidate-panel-header {
+    display: flex;
+    flex: 0 0 50px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 50px;
+    padding: 0 14px;
+    border-bottom: 1px solid #e6ebf2;
+}
+
+.candidate-panel-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.candidate-panel-title-row {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+}
+
+.candidate-block-count {
+    border-radius: 999px;
+    padding: 3px 8px;
+    background: #edf1f8;
+    color: #58657c;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.candidate-create-button {
+    flex: 0 0 auto;
+    border: 1px solid #aebbd0;
+    border-radius: 6px;
+    padding: 6px 8px;
+    background: #ffffff;
+    color: #405270;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.candidate-create-button:hover:not(:disabled) {
+    border-color: #7e91ae;
+    background: #e8eff9;
+    color: #25355d;
+}
+
+.candidate-create-button:focus-visible {
+    outline: 3px solid rgb(87 152 211 / 40%);
+    outline-offset: 2px;
+}
+
+.candidate-create-button:disabled {
+    cursor: not-allowed;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.candidate-panel-content {
+    min-height: 0;
+    overflow: auto;
+    padding: 12px 14px;
+}
+
+.candidate-panel-message,
+.candidate-panel-error {
+    margin: 0;
+}
+
+.candidate-panel-message {
+    color: #728097;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.candidate-panel-error {
+    color: #a42b2b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.candidate-block-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ========================================
+ * TODOパネル開閉時のPlan編集レイアウト
+ * ======================================== */
+
+.plan-editor-layout-todo-collapsed {
+    grid-template-columns: minmax(0, 1fr) 330px 42px;
+}
+
+.plan-editor-layout-todo-collapsed .plan-editor-side-column {
+    position: static;
+    display: contents;
+}
+
+.plan-editor-layout-todo-collapsed .candidate-panel {
+    grid-column: 2;
+}
+
+.plan-editor-layout-todo-collapsed .plan-todo-panel {
+    grid-column: 3;
+    min-width: 42px;
+    min-height: 50px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+}
+
+.plan-editor-layout-todo-collapsed .plan-todo-panel-header {
+    justify-content: center;
+    min-height: 50px;
+    padding: 0;
+    border: 1px solid #cbd5e4;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 3px 10px rgb(38 48 74 / 10%);
+}
+
+.plan-editor-layout-todo-collapsed .plan-todo-panel-toggle {
+    border: 0;
+}
+
+.plan-editor-layout-todo-collapsed .plan-todo-panel-content {
+    display: none;
+}
+
+/* ========================================
+ * Block種別の凡例
+ * ======================================== */
+
+.comparison-legend {
+    display: flex;
+    gap: 14px;
+    margin-top: 13px;
+    color: #68758c;
+    font-size: 11px;
+}
+
+.legend-color {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    margin-right: 4px;
+    border-radius: 3px;
+    vertical-align: -1px;
+}
+
+.legend-color-activity {
+    border: 1px solid var(--block-activity-border);
+    background: var(--block-activity-background);
+}
+
+.legend-color-transfer {
+    border: 1px solid var(--block-transfer-border);
+    background: var(--block-transfer-background);
+}
+
+/* ========================================
+ * 広いPC画面
+ * ======================================== */
+
+@media (min-width: 1500px) {
+    .plan-editor-layout-todo-open {
+        grid-template-columns:
+            minmax(650px, 3fr)
+            minmax(360px, 2fr)
+            minmax(300px, 1fr);
+    }
+
+    .plan-editor-layout-todo-open .plan-editor-side-column {
+        position: static;
+        display: contents;
+    }
+
+    .plan-editor-layout-todo-open .candidate-panel {
+        grid-column: 2;
+        min-height: 360px;
+    }
+
+    .plan-editor-layout-todo-open .plan-todo-panel {
+        position: sticky;
+        top: 24px;
+        grid-column: 3;
+        min-height: 360px;
+        max-height: calc(100vh - 48px);
+    }
+
+    .plan-editor-layout-todo-collapsed {
+        grid-template-columns:
+            minmax(650px, 3fr)
+            minmax(360px, 2fr)
+            42px;
+    }
+}

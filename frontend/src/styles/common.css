@@ -1,0 +1,78 @@
+.page {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 32px 56px;
+}
+
+.page-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 26px;
+}
+
+.page-description {
+    margin: 8px 0 0;
+    color: #6d7890;
+}
+
+.button {
+    border: 0;
+    border-radius: 7px;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+
+.button-primary {
+    background: #e76f51;
+    color: #ffffff;
+}
+
+.button-secondary {
+    border: 1px solid #bcc8dc;
+    background: #eef2f8;
+    color: #3f5271;
+}
+
+.button-top-right {
+    padding: 8px 11px;
+    font-size: 14px;
+}
+
+.button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.status-message,
+.empty-state {
+    border: 1px solid #dfe5ee;
+    border-radius: 10px;
+    padding: 20px;
+    background: #ffffff;
+}
+
+.status-message-error {
+    border-color: #e59a9a;
+    color: #a42b2b;
+    background: #fff5f5;
+}
+
+.status-message h2,
+.empty-state h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.status-message p,
+.empty-state p {
+    margin: 8px 0 0;
+    color: #6d7890;
+}

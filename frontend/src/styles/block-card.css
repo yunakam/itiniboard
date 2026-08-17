@@ -1,0 +1,239 @@
+:root {
+    --block-card-border-width: 5px;
+    --block-card-padding-block: 10px;
+    --block-card-padding-inline: 12px;
+    --block-card-leading-icon-width: 20px;
+    --block-card-header-gap: 6px;
+    --block-card-edit-button-width: 25px;
+    --block-card-title-offset: calc(
+            var(--block-card-leading-icon-width) + var(--block-card-header-gap)
+    );
+
+    --block-activity-border: #ea922c;
+    --block-activity-background: #ffd69c;
+    --block-activity-text: #754414;
+
+    --block-transfer-border: #5798d3;
+    --block-transfer-background: #dceeff;
+    --block-transfer-text: #28577f;
+}
+
+/* ========================================
+ * Blockカード共通外観
+ * ======================================== */
+
+.comparison-block,
+.itinerary-block,
+.candidate-block {
+    min-height: 49px;
+    border-left: var(--block-card-border-width) solid;
+    border-radius: 7px;
+    padding: var(--block-card-padding-block) var(--block-card-padding-inline);
+    box-shadow: 0 1px 4px rgb(38 48 74 / 7%);
+}
+
+.itinerary-block,
+.candidate-block {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.itinerary-block:active,
+.candidate-block:active {
+    cursor: grabbing;
+}
+
+/* ========================================
+ * Block種別
+ * ======================================== */
+
+.comparison-block-activity,
+.itinerary-block-activity,
+.candidate-block-activity {
+    border-color: var(--block-activity-border);
+    background: var(--block-activity-background);
+    color: var(--block-activity-text);
+}
+
+.comparison-block-transfer,
+.itinerary-block-transfer,
+.candidate-block-transfer {
+    border-color: var(--block-transfer-border);
+    background: var(--block-transfer-background);
+    color: var(--block-transfer-text);
+}
+
+/* ========================================
+ * 旧形式のカード表示
+ *
+ * 比較表と、block-card-header未適用の行程カードを維持する。
+ * ======================================== */
+
+.comparison-block-title,
+.itinerary-block-title,
+.candidate-block-title {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.comparison-block-meta,
+.itinerary-block-meta,
+.candidate-block-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-top: 4px;
+    font-size: 10px;
+    opacity: 0.86;
+}
+
+.comparison-place,
+.itinerary-block-place,
+.candidate-block-summary {
+    border-radius: 999px;
+    padding: 2px 6px;
+    background: rgb(255 255 255 / 58%);
+    font-weight: 700;
+}
+
+.comparison-todo-count,
+.itinerary-block-todo,
+.candidate-block-todo,
+.candidate-block-usage {
+    font-weight: 700;
+}
+
+/* ========================================
+ * アイコン・編集ボタンを持つ新形式のカード表示
+ * ======================================== */
+
+.candidate-block-card-header,
+.itinerary-block-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.block-card-header {
+    display: grid;
+    grid-template-columns:
+        var(--block-card-leading-icon-width)
+        minmax(0, 1fr)
+        var(--block-card-edit-button-width);
+    align-items: center;
+    gap: var(--block-card-header-gap);
+}
+
+.block-card-leading-icon {
+    display: grid;
+    width: var(--block-card-leading-icon-width);
+    height: var(--block-card-leading-icon-width);
+    place-items: center;
+    font-size: 14px;
+    line-height: 1;
+}
+
+/*
+ * 先頭列はleadingIconの幅と、アイコン・タイトル間の隙間。
+ * locationを第2列へ置くため、タイトルの開始位置と一致する。
+ */
+.block-card-secondary-row {
+    display: grid;
+    grid-template-columns:
+        var(--block-card-title-offset)
+        minmax(0, 1fr)
+        max-content
+        max-content;
+    align-items: center;
+    column-gap: 16px;
+    margin-top: 5px;
+    color: currentcolor;
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1.35;
+}
+
+.block-card-location {
+    grid-column: 2;
+    min-width: 0;
+    overflow: hidden;
+    opacity: 0.85;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.block-card-usage {
+    grid-column: 3;
+    font-weight: 400;
+    opacity: 0.85;
+    white-space: nowrap;
+}
+
+.block-card-todo {
+    grid-column: 4;
+    justify-self: end;
+    color: #a14852;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/* ========================================
+ * Block編集ボタン
+ * ======================================== */
+
+.block-edit-button {
+    display: inline-grid;
+    width: var(--block-card-edit-button-width);
+    height: var(--block-card-edit-button-width);
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 68%);
+    border-radius: 5px;
+    padding: 0;
+    background: rgb(255 255 255 / 56%);
+    color: currentcolor;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 0;
+    pointer-events: none;
+    touch-action: manipulation;
+    transition:
+            opacity 0.15s ease,
+            background-color 0.15s ease,
+            border-color 0.15s ease;
+}
+
+.candidate-block:hover .block-edit-button,
+.candidate-block:focus-within .block-edit-button,
+.itinerary-block:hover .block-edit-button,
+.itinerary-block:focus-within .block-edit-button,
+.block-edit-button:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.block-edit-button:hover:not(:disabled) {
+    border-color: rgb(255 255 255 / 92%);
+    background: rgb(255 255 255 / 82%);
+}
+
+.block-edit-button:focus-visible {
+    outline: 3px solid rgb(87 152 211 / 40%);
+    outline-offset: 2px;
+}
+
+.block-edit-button:disabled {
+    cursor: not-allowed;
+    opacity: 0;
+    pointer-events: none;
+}

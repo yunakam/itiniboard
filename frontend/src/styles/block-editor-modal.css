@@ -1,0 +1,289 @@
+/* ========================================
+ * モーダル基盤
+ * ======================================== */
+
+.modal-overlay {
+    position: fixed;
+    z-index: 20;
+    inset: 0;
+    display: grid;
+    overflow: auto;
+    place-items: center;
+    padding: 24px;
+    background: rgb(23 33 61 / 56%);
+}
+
+.block-editor-modal {
+    width: min(620px, 100%);
+    max-height: calc(100vh - 48px);
+    overflow: hidden;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 18px 55px rgb(7 17 39 / 46%);
+}
+
+/* ========================================
+ * ヘッダー・フッター
+ * ======================================== */
+
+.block-editor-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 18px;
+    background: #25355d;
+    color: #ffffff;
+}
+
+.block-editor-modal-header h2 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.block-editor-modal-subtitle {
+    margin: 3px 0 0;
+    color: rgb(255 255 255 / 76%);
+    font-size: 11px;
+}
+
+.block-editor-close-button {
+    display: inline-grid;
+    width: 27px;
+    height: 27px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    padding: 0;
+    background: rgb(255 255 255 / 14%);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.block-editor-close-button:hover:not(:disabled) {
+    background: rgb(255 255 255 / 26%);
+}
+
+.block-editor-close-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.block-editor-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 18px 12px;
+    border-top: 1px solid #dce4ef;
+    background: #f7f9fd;
+}
+
+.block-editor-modal-footer .button {
+    min-width: 92px;
+    min-height: 34px;
+    padding: 7px 12px;
+    font-size: 13px;
+}
+
+/* ========================================
+ * 本文・状態メッセージ
+ * ======================================== */
+
+.block-editor-modal form {
+    display: flex;
+    max-height: calc(100vh - 92px);
+    flex-direction: column;
+}
+
+.block-editor-modal-body {
+    min-height: 0;
+    overflow: auto;
+    padding: 13px 18px 14px;
+}
+
+.block-editor-status-message {
+    margin: 0;
+    color: #68758c;
+    text-align: center;
+    font-size: 13px;
+}
+
+.block-editor-error-message {
+    margin: 0 10px 10px;
+    border: 1px solid #e59a9a;
+    border-radius: 7px;
+    padding: 8px 10px;
+    background: #fff5f5;
+    color: #a42b2b;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.block-editor-error-message p {
+    margin: 0;
+}
+
+.block-editor-error-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+/* ========================================
+ * Block種別選択
+ * ======================================== */
+
+.block-type-selector {
+    margin: 0;
+    border: 0;
+    padding: 0 0 11px;
+    border-bottom: 1px solid #e6ebf2;
+}
+
+.block-type-selector legend {
+    margin-bottom: 5px;
+    padding: 0;
+    color: #536078;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.block-type-selector-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.block-type-button {
+    border: 1px solid #cbd5e3;
+    border-radius: 7px;
+    padding: 7px 9px;
+    background: #ffffff;
+    color: #63718a;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.block-type-button:hover:not(:disabled) {
+    border-color: #8fa0ba;
+    background: #f6f8fc;
+}
+
+.block-type-button-activity-selected {
+    border: 2px solid #ed9c37;
+    background: #fff0d5;
+    color: #784915;
+}
+
+.block-type-button-transfer-selected {
+    border: 2px solid var(--block-transfer-border, #5798d3);
+    background: #e7f3ff;
+    color: #28577f;
+}
+
+/* ========================================
+ * 共有Blockの案内
+ * ======================================== */
+
+.block-shared-notice {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 10px 0 0;
+    border: 1px solid #b9cfe7;
+    border-radius: 7px;
+    padding: 8px 10px;
+    background: #edf7ff;
+    color: #28577f;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.block-shared-notice strong {
+    font-size: 12px;
+}
+
+/* ========================================
+ * 入力項目
+ * ======================================== */
+
+.block-editor-field {
+    margin-top: 10px;
+}
+
+.block-editor-field-compact {
+    width: min(260px, 100%);
+}
+
+.block-editor-field label {
+    display: block;
+    margin-bottom: 3px;
+    color: #536078;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.block-editor-required {
+    margin-left: 3px;
+    color: #db5a4b;
+}
+
+.block-editor-field input,
+.block-editor-field select,
+.block-editor-field textarea {
+    width: 100%;
+    border: 1px solid #cbd5e3;
+    border-radius: 6px;
+    padding: 7px 9px;
+    background: #ffffff;
+    color: #34405a;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.block-editor-field textarea {
+    min-height: 64px;
+}
+
+.block-editor-field input:focus,
+.block-editor-field select:focus,
+.block-editor-field textarea:focus {
+    border-color: #5798d3;
+    outline: 3px solid rgb(87 152 211 / 20%);
+}
+
+.block-editor-field input:disabled,
+.block-editor-field select:disabled,
+.block-editor-field textarea:disabled {
+    cursor: not-allowed;
+    background: #f4f6fa;
+    color: #7d899b;
+}
+
+.block-editor-field-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.block-editor-type-fields {
+    margin-top: 12px;
+}
+
+.block-editor-type-fields h3 {
+    margin: 0;
+    color: #405270;
+    font-size: 15px;
+}
+
+@media (min-width: 721px) {
+    .block-editor-field-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
